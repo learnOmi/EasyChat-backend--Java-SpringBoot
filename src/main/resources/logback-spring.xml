@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration scan="true" scanPeriod="${LOG_SCAN_PERIOD:30 seconds}">
+
+    <!-- 从application.properties中加载属性 -->
+    <springProperty scope="context" name="LOG_PATH" source="logging.file.path" defaultValue="logs"/>
+    <springProperty scope="context" name="LOG_PATTERN" source="logging.pattern" defaultValue="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"/>
+    <springProperty scope="context" name="LOG_CHARSET" source="logging.charset" defaultValue="UTF-8"/>
+    <springProperty scope="context" name="MAX_FILE_SIZE" source="logging.maxFileSize" defaultValue="10MB"/>
+    <springProperty scope="context" name="MAX_HISTORY" source="logging.maxHistory" defaultValue="30"/>
+    <springProperty scope="context" name="TOTAL_SIZE_CAP" source="logging.totalSizeCap" defaultValue="1GB"/>
+    <springProperty scope="context" name="ROOT_LEVEL" source="logging.rootLevel" defaultValue="INFO"/>
+    <springProperty scope="context" name="EASYCHAT_LEVEL" source="logging.easychatLevel" defaultValue="DEBUG"/>
+    <springProperty scope="context" name="SPRING_LEVEL" source="logging.springLevel" defaultValue="INFO"/>
+    <springProperty scope="context" name="HIBERNATE_LEVEL" source="logging.hibernateLevel" defaultValue="WARN"/>
+    <springProperty scope="context" name="PROD_LEVEL" source="logging.prodLevel" defaultValue="WARN"/>
+    <springProperty scope="context" name="DEV_LEVEL" source="logging.devLevel" defaultValue="DEBUG"/>
+    <springProperty scope="context" name="EXAMPLE_LEVEL" source="logging.exampleLevel" defaultValue="TRACE"/>
+
+    <!-- 控制台输出 -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+            <charset>${LOG_CHARSET}</charset>
+        </encoder>
+    </appender>
+
+    <!-- 文件输出 -->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/application.log</file>
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+            <charset>${LOG_CHARSET}</charset>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <!-- 每日滚动 -->
+            <fileNamePattern>${LOG_PATH}/application.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <!-- 单个文件最大 -->
+            <maxFileSize>${MAX_FILE_SIZE}</maxFileSize>
+            <!-- 保留历史记录 -->
+            <maxHistory>${MAX_HISTORY}</maxHistory>
+            <!-- 总大小限制 -->
+            <totalSizeCap>${TOTAL_SIZE_CAP}</totalSizeCap>
+        </rollingPolicy>
+    </appender>
+
+    <!-- 错误日志单独输出 -->
+    <appender name="ERROR_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/error.log</file>
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>ERROR</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+            <charset>${LOG_CHARSET}</charset>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/error.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxFileSize>${MAX_FILE_SIZE}</maxFileSize>
+            <maxHistory>${MAX_HISTORY}</maxHistory>
+        </rollingPolicy>
+    </appender>
+
+    <!-- 根日志级别 -->
+    <root level="${ROOT_LEVEL}">
+        <appender-ref ref="CONSOLE" />
+        <appender-ref ref="FILE" />
+        <appender-ref ref="ERROR_FILE" />
+    </root>
+
+    <!-- 特定包或类的日志级别 -->
+    <logger name="com.easychat" level="${EASYCHAT_LEVEL}" />
+    <logger name="org.springframework" level="${SPRING_LEVEL}" />
+    <logger name="org.hibernate" level="${HIBERNATE_LEVEL}" />
+
+    <!-- 生产环境配置 -->
+    <springProfile name="prod">
+        <root level="${PROD_LEVEL}">
+            <appender-ref ref="FILE" />
+            <appender-ref ref="ERROR_FILE" />
+        </root>
+    </springProfile>
+
+    <!-- 开发环境配置 -->
+    <springProfile name="dev">
+        <root level="${DEV_LEVEL}">
+            <appender-ref ref="CONSOLE" />
+            <appender-ref ref="FILE" />
+        </root>
+        <logger name="com.example" level="${EXAMPLE_LEVEL}" />
+    </springProfile>
+
+</configuration>
