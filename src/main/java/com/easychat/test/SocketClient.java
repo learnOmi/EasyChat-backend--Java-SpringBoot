@@ -1,7 +1,6 @@
 package com.easychat.test;
 
-import java.io.OutputStream;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.Socket;
 import java.util.Scanner;
 
@@ -12,35 +11,67 @@ public class SocketClient {
  * 实现从控制台输入内容并发送到服务器的功能
  */
     public static void main(String[] args) {
-    // 创建Socket对象，初始值为null
-        Socket socket = null;
-        try {
         // 创建Socket连接，连接到本地IP(127.0.0.1)的1027端口
-            socket = new Socket("127.0.0.1", 1027);
+        try (Socket socket = new Socket("127.0.0.1", 1027)) {
             System.out.println("连接成功");
 
-        // 获取输出流
-            OutputStream outputStream = socket.getOutputStream();
-        // 创建PrintWriter对象，用于发送数据
-            PrintWriter printWriter = new PrintWriter(outputStream);
-            System.out.println("请输入要发送的内容");
+            // 使用try-with-resources确保流和读写器正确关闭
+            try (PrintWriter printWriter = new PrintWriter(socket.getOutputStream());
+                 BufferedReader reader = new BufferedReader(
+                         new InputStreamReader(socket.getInputStream()))) {
+                
+                System.out.println("请输入要发送的内容");
 
-        // 创建新线程，用于持续监听控制台输入并发送消息
-            new Thread(() -> {
-                while (true) {
-                // 创建Scanner对象读取控制台输入
+                // 创建新线程，用于持续监听控制台输入并发送消息
+                new Thread(() -> {
                     Scanner scanner = new Scanner(System.in);
-                // 读取输入的一行内容
-                    String message = scanner.nextLine();
-                // 发送消息
-                    printWriter.println(message);
-                // 刷新输出流，确保消息立即发送
-                    printWriter.flush();
+                    try {
+                        while (true) {
+                            String message = scanner.nextLine();
+                            printWriter.println(message);
+                            printWriter.flush();
+                            
+                            // 检查退出命令
+                            if ("exit".equalsIgnoreCase(message)) {
+                                System.out.println("客户端准备退出");
+                                break;
+                            }
+                        }
+                    } catch (Exception e) {
+                        System.out.println("发送消息时出错: " + e.getMessage());
+                    } finally {
+                        scanner.close();
+                    }
+                }).start();
+
+                // 创建新线程，用于持续监听服务器返回的消息
+                new Thread(() -> {
+                    while (true) {
+                        try {
+                            String line = reader.readLine();
+                            if (line == null) {
+                                System.out.println("服务器已关闭连接");
+                                break;
+                            }
+                            System.out.println("收到消息:" + line);
+                        } catch (Exception e) {
+                            System.out.println("接收消息时出错: " + e.getMessage());
+                        }
+                    }
+                }).start();
+                
+                // 保持主线程运行，避免程序退出
+                while (true) {
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
                 }
-            }).start();
+            }
         } catch (Exception e) {
-        // 捕获并打印异常信息
-            e.printStackTrace();
+            System.out.println("客户端连接出错: " + e.getMessage());
         }
     }
 }
