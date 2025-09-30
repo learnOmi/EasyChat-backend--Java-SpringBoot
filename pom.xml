@@ -11,6 +11,12 @@
     <artifactId>my-springboot-project</artifactId>
     <version>1.0.0</version>
 
+    <properties>
+        <spring-boot.version>3.2.0</spring-boot.version>
+        <mybatis.version>3.0.5</mybatis.version>
+        <mysql.version>8.0.33</mysql.version>
+    </properties>
+
     <packaging>jar</packaging>
 
     <!-- 继承Spring Boot默认配置 -->
@@ -27,6 +33,21 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
+
+        <!-- mybatis -->
+        <dependency>
+            <groupId>org.mybatis.spring.boot</groupId>
+            <artifactId>mybatis-spring-boot-starter</artifactId>
+            <version>${mybatis.version}</version>
+        </dependency>
+
+        <!-- mysql -->
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <version>${mysql.version}</version>
+        </dependency>
+
     </dependencies>
 
     <build>
