@@ -15,6 +15,9 @@
         <spring-boot.version>3.2.0</spring-boot.version>
         <mybatis.version>3.0.5</mybatis.version>
         <mysql.version>8.0.33</mysql.version>
+        <redis.version>3.0.0</redis.version>
+        <eashcaptcha.version>1.6.2</eashcaptcha.version>
+        <nashorn.version>15.4</nashorn.version>
     </properties>
 
     <packaging>jar</packaging>
@@ -46,6 +49,27 @@
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
             <version>${mysql.version}</version>
+        </dependency>
+
+        <!-- easycaptcha -->
+        <dependency>
+            <groupId>com.github.whvcse</groupId>
+            <artifactId>easy-captcha</artifactId>
+            <version>${eashcaptcha.version}</version>
+        </dependency>
+
+        <!-- Nashorn JavaScript引擎 -->
+        <dependency>
+            <groupId>org.openjdk.nashorn</groupId>
+            <artifactId>nashorn-core</artifactId>
+            <version>${nashorn.version}</version> <!-- 使用适合你Java版本的Nashorn版本 -->
+        </dependency>
+
+        <!-- Redis -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+            <version>${redis.version}</version>
         </dependency>
 
     </dependencies>

@@ -25,7 +25,7 @@ public class UserInfoBeautyController extends ABaseController {
 	// 加载数据列表
 	@RequestMapping("loadDataList")
 	public ResponseVO loadDataList(UserInfoBeautyQuery query) {
-		return getSuccessResponse(userInfoBeautyService.findListByParam(query));
+		return getSuccessResponse(userInfoBeautyService.findPageByParam(query));
 	}
 
 	// 新增
