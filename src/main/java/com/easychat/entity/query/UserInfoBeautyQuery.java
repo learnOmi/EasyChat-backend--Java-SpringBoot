@@ -13,7 +13,8 @@ public class UserInfoBeautyQuery extends BaseQuery {
 	private String emailFuzzy;
 
 	// 用户id
-	private Integer userId;
+	private String userId;
+    private String userIdFuzzy;
 	// 0: 未启用 1:启用
 	private Byte status;
 	public void setId(Integer id) {
@@ -32,13 +33,21 @@ public class UserInfoBeautyQuery extends BaseQuery {
 		return email;
 	}
 
-	public void setUserId(Integer userId) {
+	public void setUserId(String userId) {
 		this.userId = userId;
 	}
 
-	public Integer getUserId() {
+	public String getUserId() {
 		return userId;
 	}
+
+    public void setUserIdFuzzy(String userIdFuzzy) {
+        this.userIdFuzzy = userIdFuzzy;
+    }
+
+    public String getUserIdFuzzy() {
+        return userIdFuzzy;
+    }
 
 	public void setStatus(Byte status) {
 		this.status = status;

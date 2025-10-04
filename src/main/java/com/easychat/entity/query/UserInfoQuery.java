@@ -8,7 +8,8 @@ import java.util.Date;
  */
 public class UserInfoQuery extends BaseQuery {
 	// 用户id
-	private Integer userId;
+	private String userId;
+    private String userIdFuzzy;
 	// 邮箱
 	private String email;
 	private String emailFuzzy;
@@ -53,13 +54,21 @@ public class UserInfoQuery extends BaseQuery {
 
 	// 最后离开时间
 	private Long lastOffTime;
-	public void setUserId(Integer userId) {
+	public void setUserId(String userId) {
 		this.userId = userId;
 	}
 
-	public Integer getUserId() {
+	public String getUserId() {
 		return userId;
 	}
+
+    public void setUserIdFuzzy(String userIdFuzzy) {
+        this.userIdFuzzy = userIdFuzzy;
+    }
+
+    public String getUserIdFuzzy() {
+        return userIdFuzzy;
+    }
 
 	public void setEmail(String email) {
 		this.email = email;

@@ -13,7 +13,7 @@ public class UserInfoBeauty implements Serializable {
 	// 邮箱
 	private String email;
 	// 用户id
-	private Integer userId;
+	private String userId;
 	// 0: 未启用 1:启用
 	@JsonIgnore
 	private Byte status;
@@ -34,11 +34,11 @@ public class UserInfoBeauty implements Serializable {
 		return email;
 	}
 
-	public void setUserId(Integer userId) {
+	public void setUserId(String userId) {
 		this.userId = userId;
 	}
 
-	public Integer getUserId() {
+	public String getUserId() {
 		return userId;
 	}
 
