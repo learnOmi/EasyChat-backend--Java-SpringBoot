@@ -1,23 +1,26 @@
 package com.easychat.service.impl;
 
 import com.easychat.entity.config.AppConfig;
+import com.easychat.entity.constants.Constants;
 import com.easychat.entity.dto.TokenUserInfoDto;
 import com.easychat.entity.po.UserInfoBeauty;
-import com.easychat.enums.BeautyAccountStatusEnum;
-import com.easychat.enums.PageSize;
+import com.easychat.entity.vo.UserInfoVO;
+import com.easychat.enums.*;
 import com.easychat.entity.query.SimplePage;
 import com.easychat.entity.po.UserInfo;
 import com.easychat.entity.query.UserInfoQuery;
-import com.easychat.enums.UserContactTypeEnum;
-import com.easychat.enums.UserStatusEnum;
 import com.easychat.exception.BusinessException;
 import com.easychat.mapper.UserInfoBeautyMapper;
-import com.easychat.mapper.UserInfoMapper;import com.easychat.entity.vo.PaginationResultVO;
+import com.easychat.mapper.UserInfoMapper;
+import com.easychat.entity.vo.PaginationResultVO;
+import com.easychat.redis.RedisComponent;
 import com.easychat.service.UserInfoService;
+import com.easychat.utils.CopyTools;
 import com.easychat.utils.StringTools;
 import org.apache.commons.lang3.ArrayUtils;
 import org.springframework.stereotype.Service;
 import jakarta.annotation.Resource;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -37,6 +40,8 @@ public class UserInfoServiceImpl implements UserInfoService {
     private UserInfoBeautyMapper<UserInfoBeauty, UserInfoQuery> userInfoBeautyMapper;
     @Resource
     private AppConfig appConfig;
+    @Resource
+    private RedisComponent redisComponent;
 
     // 根据条件查询列表
     public List<UserInfo> findListByParam(UserInfoQuery query) {
@@ -114,6 +119,7 @@ public class UserInfoServiceImpl implements UserInfoService {
      * @param nickName 用户昵称
      * @param password 用户密码
      */
+    @Transactional(rollbackFor = Exception.class)
     public void register(String email, String nickName, String password) {
         // 创建结果Map，用于返回操作结果
         Map<String, Object> result = new HashMap<>();
@@ -148,6 +154,7 @@ public class UserInfoServiceImpl implements UserInfoService {
         userInfo.setCreateTime(curDate);      // 设置创建时间
         userInfo.setStatus((byte) UserStatusEnum.ENABLED.getStatus());  // 设置用户状态为启用
         userInfo.setLastOffTime(curDate.getTime());  // 设置最后下线时间
+        userInfo.setJoinType((byte) JoinTypeEnum.APPLY.getType());  // 设置加入类型为申请
         // 插入用户信息到数据库
         this.userInfoMapper.insert(userInfo);
 
@@ -167,7 +174,7 @@ public class UserInfoServiceImpl implements UserInfoService {
      * @return TokenUserInfoDto 包含用户信息和token的DTO对象
      * @throws BusinessException 当账号不存在、密码错误或账号被禁用时抛出业务异常
      */
-    public TokenUserInfoDto login(String email, String password) {
+    public UserInfoVO login(String email, String password) {
         // 创建一个HashMap用于存储结果
         Map<String, Object> result = new HashMap<>();
         // 根据邮箱查询用户信息
@@ -182,8 +189,28 @@ public class UserInfoServiceImpl implements UserInfoService {
             // 抛出业务异常，提示账号已被禁用
             throw new BusinessException("账号已被禁用！");
         }
-        // 返回包含用户信息的TokenUserInfoDto对象
-        return getTokenUserInfoDto(userInfo);
+
+        // 从Redis中获取用户最后一次的心跳时间
+        Long lastHeartBeat = redisComponent.getUserHeartBeat(userInfo.getUserId());
+        // 如果心跳时间不为空，说明用户已登录，抛出业务异常
+        if (lastHeartBeat != null) {
+            throw new BusinessException("用户已登录！");
+        }
+
+        // 获取用户信息数据传输对象
+        TokenUserInfoDto tokenUserInfoDto = getTokenUserInfoDto(userInfo);
+        // 生成一个20位长度的随机字符串，与用户ID组合后进行MD5加密，作为token
+        String token = StringTools.encodeMd5(tokenUserInfoDto.getUserId() + StringTools.getRandomString(Constants.LENGTH_20));
+        // 将生成的token设置到用户信息数据传输对象中
+        tokenUserInfoDto.setToken(token);
+        // 将用户信息数据传输对象保存到Redis中
+        redisComponent.saveTokenUserInfoDto(tokenUserInfoDto);
+
+        // 使用CopyTools工具类将userInfo对象复制到UserInfoVO对象中
+        UserInfoVO userInfoVO = CopyTools.copy(userInfo, UserInfoVO.class);
+        userInfoVO.setToken(tokenUserInfoDto.getToken());
+        userInfoVO.setAdmin(tokenUserInfoDto.getAdmin());
+        return userInfoVO;
     }
 
     /**

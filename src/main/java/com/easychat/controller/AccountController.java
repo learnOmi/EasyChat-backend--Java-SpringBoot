@@ -2,10 +2,14 @@ package com.easychat.controller;
 
 import com.easychat.entity.constants.Constants;
 import com.easychat.entity.dto.TokenUserInfoDto;
+import com.easychat.entity.po.UserInfo;
 import com.easychat.entity.vo.ResponseVO;
+import com.easychat.entity.vo.UserInfoVO;
 import com.easychat.exception.BusinessException;
+import com.easychat.redis.RedisComponent;
 import com.easychat.redis.RedisUtils;
 import com.easychat.service.impl.UserInfoServiceImpl;
+import com.easychat.utils.CopyTools;
 import com.wf.captcha.ArithmeticCaptcha;
 import jakarta.annotation.Resource;
 import jakarta.validation.constraints.Email;
@@ -31,6 +35,8 @@ public class AccountController extends ABaseController {
     private RedisUtils redisUtils;
     @Autowired
     private UserInfoServiceImpl userInfoService;
+    @Resource
+    private RedisComponent redisComponent;
 
     @RequestMapping("/checkcode")
     public ResponseVO checkCode() {
@@ -67,10 +73,16 @@ public class AccountController extends ABaseController {
             if (!checkCode.equalsIgnoreCase((String) redisUtils.get(Constants.REDIS_KEY_CHECK_CODE + checkCodeKey))) {
                 throw new BusinessException("图片验证码不正确");
             }
-            TokenUserInfoDto tokenUserInfoDto = userInfoService.login(email, password);
-            return getSuccessResponse(null);
+            UserInfoVO tokenUserInfoDto = userInfoService.login(email, password);
+
+            return getSuccessResponse(tokenUserInfoDto);
         } finally {
             redisUtils.delete(Constants.REDIS_KEY_CHECK_CODE + checkCodeKey);
         }
+    }
+
+    @RequestMapping("/getSysSetting")
+    public ResponseVO getSysSetting() {
+        return getSuccessResponse(redisComponent.getSysSetting());
     }
 }

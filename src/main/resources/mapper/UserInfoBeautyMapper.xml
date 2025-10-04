@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.autoMapper.mapper.UserInfoBeautyMapper">
+<mapper namespace="com.easychat.mapper.UserInfoBeautyMapper">
     <!-- 实体映射 -->
-    <resultMap id="base_result_map" type="com.autoMapper.entity.po.UserInfoBeauty">
+    <resultMap id="base_result_map" type="com.easychat.entity.po.UserInfoBeauty">
         <!--  -->
         <id column="id" property="id"/>
         <!-- 邮箱 -->
@@ -72,7 +72,7 @@
     </select>
 
     <!-- 插入(匹配有值的字段) -->
-    <insert id="insert" parameterType="com.autoMapper.entity.po.UserInfoBeauty">
+    <insert id="insert" parameterType="com.easychat.entity.po.UserInfoBeauty">
         <selectKey keyProperty="bean.id" order="AFTER" resultType="Integer">
             SELECT LAST_INSERT_ID()
         </selectKey>
@@ -108,7 +108,7 @@
     </insert>
 
     <!-- 插入或更新 -->
-    <insert id="insertOrUpdate" parameterType="com.autoMapper.entity.po.UserInfoBeauty">
+    <insert id="insertOrUpdate" parameterType="com.easychat.entity.po.UserInfoBeauty">
         INSERT INTO user_info_beauty
         <trim prefix="(" suffix=")" suffixOverrides="," >
             <if test="bean.id != null">
@@ -146,7 +146,7 @@
     </insert>
 
     <!-- 批量插入 -->
-    <insert id="insertBatch" parameterType="com.autoMapper.entity.po.UserInfoBeauty">
+    <insert id="insertBatch" parameterType="com.easychat.entity.po.UserInfoBeauty">
         INSERT INTO user_info_beauty
         <trim prefix="(" suffix=")" suffixOverrides="," >
             email,
@@ -164,7 +164,7 @@
     </insert>
 
     <!-- 批量插入或更新 -->
-    <insert id="insertOrUpdateBatch" parameterType="com.autoMapper.entity.po.UserInfoBeauty">
+    <insert id="insertOrUpdateBatch" parameterType="com.easychat.entity.po.UserInfoBeauty">
         INSERT INTO user_info_beauty
         <trim prefix="(" suffix=")" suffixOverrides="," >
             email,

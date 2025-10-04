@@ -4,6 +4,8 @@ import com.easychat.entity.dto.TokenUserInfoDto;
 import com.easychat.entity.po.UserInfo;
 import com.easychat.entity.query.UserInfoQuery;
 import com.easychat.entity.vo.PaginationResultVO;
+import com.easychat.entity.vo.UserInfoVO;
+
 import java.util.List;
 import java.util.Map;
 
@@ -52,5 +54,5 @@ public interface UserInfoService {
     void register(String email, String nickName, String password);
 
     // 登录
-    TokenUserInfoDto login(String email, String password);
+    UserInfoVO login(String email, String password);
 }
