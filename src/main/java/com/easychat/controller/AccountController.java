@@ -1,5 +1,6 @@
 package com.easychat.controller;
 
+import com.easychat.annotation.GlobalInterceptor;
 import com.easychat.entity.constants.Constants;
 import com.easychat.entity.dto.TokenUserInfoDto;
 import com.easychat.entity.po.UserInfo;
@@ -38,7 +39,7 @@ public class AccountController extends ABaseController {
     @Resource
     private RedisComponent redisComponent;
 
-    @RequestMapping("/checkcode")
+    @RequestMapping("/checkCode")
     public ResponseVO checkCode() {
         ArithmeticCaptcha captcha = new ArithmeticCaptcha(100, 42);
         String code = captcha.text();
@@ -60,7 +61,7 @@ public class AccountController extends ABaseController {
             if (!checkCode.equalsIgnoreCase((String) redisUtils.get(Constants.REDIS_KEY_CHECK_CODE + checkCodeKey))) {
                 throw new BusinessException("图片验证码不正确");
             }
-            userInfoService.register(email, password, nickName);
+            userInfoService.register(email, nickName, password);
             return getSuccessResponse(null);
         } finally {
             redisUtils.delete(Constants.REDIS_KEY_CHECK_CODE + checkCodeKey);
@@ -81,6 +82,7 @@ public class AccountController extends ABaseController {
         }
     }
 
+    @GlobalInterceptor
     @RequestMapping("/getSysSetting")
     public ResponseVO getSysSetting() {
         return getSuccessResponse(redisComponent.getSysSetting());

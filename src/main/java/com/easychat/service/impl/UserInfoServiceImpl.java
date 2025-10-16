@@ -180,7 +180,7 @@ public class UserInfoServiceImpl implements UserInfoService {
         // 根据邮箱查询用户信息
         UserInfo userInfo = this.userInfoMapper.selectByEmail(email);
         // 判断用户是否存在或密码是否错误
-        if (null == userInfo || !StringTools.encodeMd5(password).equals(userInfo.getPassword())) {
+        if (null == userInfo || !password.equals(userInfo.getPassword())) {
             // 抛出业务异常，提示邮箱/账号或密码错误
             throw new BusinessException("邮箱/账号或密码错误！");
         }

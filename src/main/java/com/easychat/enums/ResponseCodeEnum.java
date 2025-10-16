@@ -6,7 +6,8 @@ public enum ResponseCodeEnum {
     CODE_404(404, "请求资源不存在"),
     CODE_403(403, "无权限访问"),
     CODE_600(600, "请求参数错误"),
-    CODE_601(601, "信息已存在");
+    CODE_601(601, "信息已存在"),
+    CODE_901(901, "登录超时");
 
     private Integer code;
     private String msg;
