@@ -31,6 +31,8 @@ public class UserContactQuery extends BaseQuery {
 
 	private String lastUpdateTimeEnd;
 
+    private Boolean queryUserInfo;
+
 	public void setUserId(String userId) {
 		this.userId = userId;
 	}
@@ -126,5 +128,13 @@ public class UserContactQuery extends BaseQuery {
 	public String getLastUpdateTimeEnd() {
 		return lastUpdateTimeEnd;
 	}
+
+    public Boolean getQueryUserInfo() {
+        return queryUserInfo;
+    }
+
+    public void setQueryUserInfo(Boolean queryUserInfo) {
+        this.queryUserInfo = queryUserInfo;
+    }
 
 }

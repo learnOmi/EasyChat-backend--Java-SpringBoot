@@ -2,15 +2,12 @@ package com.easychat.controller;
 
 import com.easychat.annotation.GlobalInterceptor;
 import com.easychat.entity.constants.Constants;
-import com.easychat.entity.dto.TokenUserInfoDto;
-import com.easychat.entity.po.UserInfo;
 import com.easychat.entity.vo.ResponseVO;
 import com.easychat.entity.vo.UserInfoVO;
 import com.easychat.exception.BusinessException;
 import com.easychat.redis.RedisComponent;
 import com.easychat.redis.RedisUtils;
-import com.easychat.service.impl.UserInfoServiceImpl;
-import com.easychat.utils.CopyTools;
+import com.easychat.service.UserInfoService;
 import com.wf.captcha.ArithmeticCaptcha;
 import jakarta.annotation.Resource;
 import jakarta.validation.constraints.Email;
@@ -35,7 +32,7 @@ public class AccountController extends ABaseController {
     @Resource
     private RedisUtils redisUtils;
     @Autowired
-    private UserInfoServiceImpl userInfoService;
+    private UserInfoService userInfoService;
     @Resource
     private RedisComponent redisComponent;
 

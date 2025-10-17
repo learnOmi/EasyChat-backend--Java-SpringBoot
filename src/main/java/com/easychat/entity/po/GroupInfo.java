@@ -31,6 +31,8 @@ public class GroupInfo implements Serializable {
 	// 状态1:正常0:解散
 	@JsonIgnore
 	private Byte status;
+    // 成员数
+    private Integer memberCount;
 
 	public void setGroupId(String groupId) {
 		this.groupId = groupId;
@@ -88,6 +90,14 @@ public class GroupInfo implements Serializable {
 		return status;
 	}
 
+    public Integer getMemberCount() {
+        return memberCount;
+    }
+
+    public void setMemberCount(Integer memberCount) {
+        this.memberCount = memberCount;
+    }
+
 	@Override
 	public String toString() {
 		return "GroupInfo [" +
@@ -97,7 +107,8 @@ public class GroupInfo implements Serializable {
 			"createTime=" + (createTime == null ? "空" : DateUtils.format(createTime, DateTimePatternEnum.YYYY_MM_DD_HH_MM_SS.getPattern())) + ", " +
 			"groupNotice=" + (groupNotice == null ? "空" : groupNotice) + ", " +
 			"joinType=" + (joinType == null ? "空" : joinType) + ", " +
-			"status=" + (status == null ? "空" : status) + 
+			"status=" + (status == null ? "空" : status) + "," +
+            "memberCount=" + (memberCount == null ? "空" : memberCount) +
 			"]";
 	}
 }
