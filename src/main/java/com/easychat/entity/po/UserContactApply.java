@@ -1,5 +1,6 @@
 package com.easychat.entity.po;
 
+import com.easychat.enums.UserContactStatusEnum;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.io.Serializable;
@@ -26,6 +27,10 @@ public class UserContactApply implements Serializable {
 	private Byte status;
 	// 申请信息
 	private String applyInfo;
+
+    private String contactName;
+
+    private String statusName;
 
 	public void setApplyId(Integer applyId) {
 		this.applyId = applyId;
@@ -91,17 +96,34 @@ public class UserContactApply implements Serializable {
 		return applyInfo;
 	}
 
-	@Override
-	public String toString() {
-		return "UserContactApply [" +
-			"applyId=" + (applyId == null ? "空" : applyId) + ", " +
-			"applyUserId=" + (applyUserId == null ? "空" : applyUserId) + ", " +
-			"receiveUserId=" + (receiveUserId == null ? "空" : receiveUserId) + ", " +
-			"contactType=" + (contactType == null ? "空" : contactType) + ", " +
-			"contactId=" + (contactId == null ? "空" : contactId) + ", " +
-			"lastApplyTime=" + (lastApplyTime == null ? "空" : lastApplyTime) + ", " +
-			"status=" + (status == null ? "空" : status) + ", " +
-			"applyInfo=" + (applyInfo == null ? "空" : applyInfo) + 
-			"]";
-	}
+    public String getContactName() {
+        return contactName;
+    }
+
+    public void setContactName(String contactName) {
+        this.contactName = contactName;
+    }
+
+    public String getStatusName() {
+        UserContactStatusEnum statusEnum = UserContactStatusEnum.getByStatus(Integer.valueOf(status));
+        return statusEnum == null ? null : statusEnum.getDesc();
+    }
+
+    public void setStatusName(String statusName) {
+        this.statusName = statusName;
+    }
+
+    @Override
+    public String toString() {
+        return "UserContactApply [" +
+                "applyId=" + (applyId == null ? "空" : applyId) + ", " +
+                "applyUserId=" + (applyUserId == null ? "空" : applyUserId) + ", " +
+                "receiveUserId=" + (receiveUserId == null ? "空" : receiveUserId) + ", " +
+                "contactType=" + (contactType == null ? "空" : contactType) + ", " +
+                "contactId=" + (contactId == null ? "空" : contactId) + ", " +
+                "lastApplyTime=" + (lastApplyTime == null ? "空" : lastApplyTime) + ", " +
+                "status=" + (status == null ? "空" : status) + ", " +
+                "applyInfo=" + (applyInfo == null ? "空" : applyInfo) +
+                "]";
+    }
 }

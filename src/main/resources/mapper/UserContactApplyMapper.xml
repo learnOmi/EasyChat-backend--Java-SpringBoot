@@ -19,6 +19,8 @@
 		<result column="status" property="status"/>
 		<!-- 申请信息 -->
 		<result column="apply_info" property="applyInfo"/>
+        <!-- 联系名称 -->
+        <result column="contact_name" property="contactName"/>
 	</resultMap>
 
 <!-- 通用查询结果列 -->
@@ -47,7 +49,7 @@
 			and last_apply_time = #{query.lastApplyTime}
 		</if>
 		<if test="query.status != null ">
-			and status = #{query.status}
+			and user_contact_apply.status = #{query.status}
 		</if>
 		<if test="query.applyInfo != null and query.applyInfo!=''">
 			and apply_info = #{query.applyInfo}
@@ -63,7 +65,7 @@
 			and receive_user_id like concat('%',#{query.receiveUserIdFuzzy},'%')
 		</if>
 		<if test="query.contactIdFuzzy != null and query.contactIdFuzzy !=''">
-			and contact_id like concat('%',#{query.contactIdFuzzy},'%')
+			and user_contact_apply.contact_id like concat('%',#{query.contactIdFuzzy},'%')
 		</if>
 		<if test="query.applyInfoFuzzy != null and query.applyInfoFuzzy !=''">
 			and apply_info like concat('%',#{query.applyInfoFuzzy},'%')
@@ -80,8 +82,18 @@
 
 	<!-- 查询列表 -->
 	<select id="selectList" resultMap="base_result_map">
-		SELECT <include refid="base_column_list"/>
-		FROM user_contact_apply 
+		SELECT user_contact_apply.*
+		<if test="query.queryContactInfo">
+            ,case
+                when user_contact.contact_type = 0 then user_info.nick_name
+		        when user_contact.contact_type = 1 then group_info.group_name
+            end as contact_name
+        </if>
+		FROM user_contact_apply
+		<if test="query.queryContactInfo">
+            left join user_info on user_info.user_id = user_contact_apply.apply_user_id and user_contact_apply.receive_user_id = #{query.receiveUserId}
+		    left join group_info on group_info.group_id = user_contact_apply.contact_id and user_contact_apply.receive_user_id = #{query.receiveUserId}
+		</if>
 		<include refid="query_condition"/>
 		<if test="query.orderBy != null and query.orderBy != ''">
 			order by ${query.orderBy}
@@ -289,6 +301,50 @@
 		</trim>
 	</insert>
 
+    <!-- 多条件更新 -->
+    <update id="updateByParam">
+        update user_contact_apply
+        <set>
+            <if test="bean.applyUserId != null">
+                apply_user_id = #{bean.applyUserId},
+            </if>
+            <if test="bean.receiveUserId != null">
+                receive_user_id = #{bean.receiveUserId},
+            </if>
+            <if test="bean.contactType != null">
+                contact_type = #{bean.contactType},
+            </if>
+            <if test="bean.contactId != null">
+                contact_id = #{bean.contactId},
+            </if>
+            <if test="bean.lastApplyTime != null">
+                last_apply_time = #{bean.lastApplyTime},
+            </if>
+            <if test="bean.status != null">
+                status = #{bean.status},
+            </if>
+            <if test="bean.applyInfo != null">
+                apply_info = #{bean.applyInfo},
+            </if>
+        </set>
+        <where>
+            <if test="query.applyId == null and query.applyUserId == null and query.receiveUserId == null and query.contactId == null ">
+                1 = 2
+            </if>
+            <include refid="query_condition"/>
+        </where>
+    </update>
+
+    <!-- 多条件删除 -->
+    <delete id="deleteByParam">
+        delete from user_contact_apply
+        <where>
+            <if test="query.applyId == null and query.applyUserId == null and query.receiveUserId == null and query.contactId == null ">
+                1 = 2
+            </if>
+            <include refid="query_condition"/>
+        </where>
+    </delete>
 
 	<!-- 根据ApplyId查询 -->
 	<select id="selectByApplyId" resultMap="base_result_map">

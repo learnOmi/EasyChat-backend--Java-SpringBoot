@@ -1,15 +1,26 @@
 package com.easychat.service.impl;
 
+import com.easychat.entity.dto.SysSettingDto;
+import com.easychat.entity.po.UserContact;
 import com.easychat.entity.po.UserContactApply;
 import com.easychat.entity.query.SimplePage;
 import com.easychat.entity.query.UserContactApplyQuery;
+import com.easychat.entity.query.UserContactQuery;
 import com.easychat.entity.vo.PaginationResultVO;
-import com.easychat.enums.PageSize;
+import com.easychat.enums.*;
+import com.easychat.exception.BusinessException;
 import com.easychat.mapper.UserContactApplyMapper;
+import com.easychat.mapper.UserContactMapper;
+import com.easychat.redis.RedisComponent;
 import com.easychat.service.UserContactApplyService;
 import jakarta.annotation.Resource;
+import org.apache.catalina.User;
+import org.apache.ibatis.builder.BuilderException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -20,7 +31,11 @@ import java.util.List;
 @Service("userContactApplyService")
 public class UserContactApplyServiceImpl implements UserContactApplyService {
 	@Resource
-	private UserContactApplyMapper<UserContactApply, UserContactApplyQuery> userContactApplyMapper;
+	private UserContactApplyMapper<UserContactApply, UserContactApplyQuery>  userContactApplyMapper;
+    @Resource
+    private UserContactMapper<UserContact, UserContactQuery> userContactMapper;
+    @Resource
+    private RedisComponent redisComponent;
 
 	// 根据条件查询列表
 	public List<UserContactApply> findListByParam(UserContactApplyQuery query) {
@@ -91,4 +106,85 @@ public class UserContactApplyServiceImpl implements UserContactApplyService {
 	public Integer deleteUserContactApplyByApplyUserIdAndReceiveUserIdAndContactId(String applyUserId, String receiveUserId, String contactId) {
 		return this.userContactApplyMapper.deleteByApplyUserIdAndReceiveUserIdAndContactId(applyUserId, receiveUserId, contactId);
 	}
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void dealWithApply(String userId, Integer applyId, Integer status) {
+        UserContactApplyStatusEnum statusEnum = UserContactApplyStatusEnum.getByStatus(status);
+        if (statusEnum == null || UserContactApplyStatusEnum.INIT == statusEnum) {
+            throw new BusinessException(ResponseCodeEnum.CODE_600);
+        }
+
+        UserContactApply applyInfo = this.userContactApplyMapper.selectByApplyId(applyId);
+        if (applyInfo == null || !(userId.equals(applyInfo.getReceiveUserId()))) {
+            throw new BusinessException(ResponseCodeEnum.CODE_600);
+        }
+
+        UserContactApply updateInfo = new UserContactApply();
+        updateInfo.setStatus(statusEnum.getStatus().byteValue());
+        updateInfo.setLastApplyTime(System.currentTimeMillis());
+
+        UserContactApplyQuery applyQuery = new UserContactApplyQuery();
+        applyQuery.setApplyId(applyId);
+        applyQuery.setStatus(UserContactApplyStatusEnum.INIT.getStatus().byteValue());
+        Integer count = userContactApplyMapper.updateByParam(updateInfo, applyQuery);
+        if (count == 0) {
+            throw new BusinessException(ResponseCodeEnum.CODE_600);
+        }
+
+        if (UserContactApplyStatusEnum.PASS.getStatus().equals(status)) {
+            this.addContact(applyInfo.getApplyUserId(), applyInfo.getReceiveUserId(), applyInfo.getContactId(), Integer.valueOf(applyInfo.getContactType()), applyInfo.getApplyInfo());
+            return;
+        }
+
+        if (UserContactApplyStatusEnum.BLACKLIST == statusEnum) {
+            Date curDate = new Date();
+            UserContact userContact = new UserContact();
+            userContact.setUserId(applyInfo.getApplyUserId());
+            userContact.setContactId(applyInfo.getContactId());
+            userContact.setContactType(applyInfo.getContactType());
+            userContact.setCreateTime(curDate);
+            userContact.setStatus(UserContactStatusEnum.BLACKLIST_BE.getStatus().byteValue());
+            userContact.setLastUpdateTime(curDate);
+            userContactMapper.insertOrUpdate(userContact);
+        }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void addContact(String applyUserId, String receiveUserId, String contactId, Integer contactType, String applyInfo) {
+        if (UserContactTypeEnum.GROUP.getType().equals(contactType)) {
+            UserContactQuery userContactQuery = new UserContactQuery();
+            userContactQuery.setContactId(contactId);
+            userContactQuery.setStatus(UserContactStatusEnum.FRIEND.getStatus().byteValue());
+            Integer count = userContactMapper.selectCount(userContactQuery);
+            SysSettingDto sysSettingDto = redisComponent.getSysSetting();
+            if (count >= sysSettingDto.getMaxGroupCount()) {
+                throw new BusinessException("群聊人数已满！");
+            }
+        }
+
+        Date curDate = new Date();
+        List<UserContact> contactList = new ArrayList<>();
+        UserContact userContact = new UserContact();
+        userContact.setUserId(applyUserId);
+        userContact.setContactId(contactId);
+        userContact.setContactType(contactType.byteValue());
+        userContact.setCreateTime(curDate);
+        userContact.setStatus(UserContactStatusEnum.FRIEND.getStatus().byteValue());
+        userContact.setLastUpdateTime(curDate);
+        contactList.add(userContact);
+
+        if (UserContactTypeEnum.USER.getType().equals(contactType)) {
+            userContact = new UserContact();
+            userContact.setUserId(receiveUserId);
+            userContact.setContactId(applyUserId);
+            userContact.setContactType(contactType.byteValue());
+            userContact.setCreateTime(curDate);
+            userContact.setStatus(UserContactStatusEnum.FRIEND.getStatus().byteValue());
+            userContact.setLastUpdateTime(curDate);
+            contactList.add(userContact);
+        }
+        userContactMapper.insertBatch(contactList);
+    }
 }

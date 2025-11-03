@@ -46,4 +46,8 @@ public interface UserContactApplyService {
 
 	// 根据ApplyUserIdAndReceiveUserIdAndContactId删除
 	Integer deleteUserContactApplyByApplyUserIdAndReceiveUserIdAndContactId(String applyUserId, String receiveUserId, String contactId);
+
+    void dealWithApply(String userId, Integer applyId, Integer status);
+
+    void addContact(String applyUserId, String receiveUserId, String contactId, Integer contactType, String applyInfo);
 }

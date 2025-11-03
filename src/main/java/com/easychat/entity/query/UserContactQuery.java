@@ -33,6 +33,14 @@ public class UserContactQuery extends BaseQuery {
 
     private Boolean queryUserInfo;
 
+    private Boolean queryGroupInfo;
+
+    private Boolean queryContactUserInfo;
+
+    private Boolean excludeMyGroup;
+
+    private Integer[] statusArray;
+
 	public void setUserId(String userId) {
 		this.userId = userId;
 	}
@@ -137,4 +145,35 @@ public class UserContactQuery extends BaseQuery {
         this.queryUserInfo = queryUserInfo;
     }
 
+    public void setQueryGroupInfo(Boolean queryGroupInfo) {
+        this.queryGroupInfo = queryGroupInfo;
+    }
+
+    public Boolean getQueryGroupInfo() {
+        return queryGroupInfo;
+    }
+
+    public Boolean getQueryContactUserInfo() {
+        return queryContactUserInfo;
+    }
+
+    public void setQueryContactUserInfo(Boolean queryContactUserInfo) {
+        this.queryContactUserInfo = queryContactUserInfo;
+    }
+
+    public Boolean getExcludeMyGroup() {
+        return excludeMyGroup;
+    }
+
+    public void setExcludeMyGroup(Boolean excludeMyGroup) {
+        this.excludeMyGroup = excludeMyGroup;
+    }
+
+    public Integer[] getStatusArray() {
+        return statusArray;
+    }
+
+    public void setStatusArray(Integer[] statusArray) {
+        this.statusArray = statusArray;
+    }
 }

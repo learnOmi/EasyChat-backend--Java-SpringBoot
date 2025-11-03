@@ -15,10 +15,12 @@ import com.easychat.mapper.GroupInfoMapper;
 import com.easychat.mapper.UserContactApplyMapper;
 import com.easychat.mapper.UserContactMapper;
 import com.easychat.mapper.UserInfoMapper;
+import com.easychat.service.UserContactApplyService;
 import com.easychat.service.UserContactService;
 import com.easychat.utils.CopyTools;
 import com.easychat.utils.StringTools;
 import jakarta.annotation.Resource;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,6 +41,9 @@ public class UserContactServiceImpl implements UserContactService {
     private GroupInfoMapper<GroupInfo, GroupInfoQuery> groupInfoMapper;
     @Resource
     private UserContactApplyMapper<UserContactApply, UserContactApplyQuery> userContactApplyMapper;
+    @Autowired
+    @Resource
+    private UserContactApplyService userContactApplyService;
 
 	// 根据条件查询列表
 	public List<UserContact> findListByParam(UserContactQuery query) {
@@ -164,7 +169,7 @@ public class UserContactServiceImpl implements UserContactService {
         }
 
         if (JoinTypeEnum.JOIN.getType() == joinType) {
-
+            userContactApplyService.addContact(applyUserId, receiveUserId, contactId, typeEnum.getType(), applyInfo);
             return joinType;
         }
 

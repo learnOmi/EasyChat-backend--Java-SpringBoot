@@ -9,6 +9,12 @@ import org.apache.ibatis.annotations.Param;
  */
 public interface UserContactApplyMapper<T, P> extends BaseMapper {
 
+    // 多条件更新
+    Integer updateByParam(@Param("bean") T t, @Param("query") P p);
+
+    // 多条件删除
+    Integer deleteByParam(@Param("query") P p);
+
 	// 根据ApplyId查询
 	T selectByApplyId(@Param("applyId") Integer applyId);
 
