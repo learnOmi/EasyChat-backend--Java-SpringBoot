@@ -5,10 +5,12 @@ import com.easychat.entity.dto.TokenUserInfoDto;
 import com.easychat.entity.dto.UserContactSearchResultDto;
 import com.easychat.entity.po.UserContact;
 import com.easychat.entity.po.UserContactApply;
+import com.easychat.entity.po.UserInfo;
 import com.easychat.entity.query.UserContactApplyQuery;
 import com.easychat.entity.query.UserContactQuery;
 import com.easychat.entity.vo.PaginationResultVO;
 import com.easychat.entity.vo.ResponseVO;
+import com.easychat.entity.vo.UserInfoVO;
 import com.easychat.enums.PageSize;
 import com.easychat.enums.ResponseCodeEnum;
 import com.easychat.enums.UserContactStatusEnum;
@@ -17,6 +19,8 @@ import com.easychat.exception.BusinessException;
 import com.easychat.service.UserContactApplyService;
 import com.easychat.service.UserContactService;
 import com.easychat.service.UserInfoService;
+import com.easychat.utils.ArrayUtils;
+import com.easychat.utils.CopyTools;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.constraints.NotEmpty;
@@ -104,4 +108,51 @@ public class UserContactController extends ABaseController{
         return getSuccessResponse(contactList);
     }
 
+    @RequestMapping("/getContactInfo")
+    @GlobalInterceptor
+    public ResponseVO getContactInfo(HttpServletRequest request, @NotNull String contactId) {
+        TokenUserInfoDto tokenUserInfoDto = getTokenUserInfoDto(request);
+        UserInfo userInfo = userInfoService.getUserInfoByUserId(contactId);
+        UserInfoVO userInfoVO = CopyTools.copy(userInfo, UserInfoVO.class);
+        userInfoVO.setContactStatus(UserContactStatusEnum.NOT_FRIEND.getStatus());
+        UserContact userContact = userContactService.getUserContactByUserIdAndContactId(tokenUserInfoDto.getUserId(), contactId);
+        if (userContact != null) {
+            userInfoVO.setContactStatus(UserContactStatusEnum.NOT_FRIEND.getStatus());
+        }
+
+        return getSuccessResponse(userInfoVO);
+    }
+
+    @RequestMapping("/getContactUserInfo")
+    @GlobalInterceptor
+    public ResponseVO getContactUserInfo(HttpServletRequest request, @NotNull String contactId) {
+        TokenUserInfoDto tokenUserInfoDto = getTokenUserInfoDto(request);
+        UserContact userContact = userContactService.getUserContactByUserIdAndContactId(tokenUserInfoDto.getUserId(), contactId);
+        if (null == userContact || !ArrayUtils.contains(new Integer[]{
+                UserContactStatusEnum.FRIEND.getStatus(),
+                UserContactStatusEnum.DEL_BE.getStatus(),
+                UserContactStatusEnum.BLACKLIST_BE.getStatus()
+            }, userContact.getStatus())) {
+            throw new BusinessException(ResponseCodeEnum.CODE_600);
+        }
+        UserInfo userInfo = userInfoService.getUserInfoByUserId(contactId);
+        UserInfoVO userInfoVO = CopyTools.copy(userInfo, UserInfoVO.class);
+        return getSuccessResponse(userInfoVO);
+    }
+
+    @RequestMapping("/delContact")
+    @GlobalInterceptor
+    public ResponseVO delContact(HttpServletRequest request, @NotNull String contactId) {
+        TokenUserInfoDto tokenUserInfoDto = getTokenUserInfoDto(request);
+        userContactService.removeUserContact(tokenUserInfoDto.getUserId(), contactId, UserContactStatusEnum.DEL);
+        return getSuccessResponse(null);
+    }
+
+    @RequestMapping("/addContact2BlackList")
+    @GlobalInterceptor
+    public ResponseVO addContact2BlackList(HttpServletRequest request, @NotNull String contactId) {
+        TokenUserInfoDto tokenUserInfoDto = getTokenUserInfoDto(request);
+        userContactService.removeUserContact(tokenUserInfoDto.getUserId(), contactId, UserContactStatusEnum.BLACKLIST);
+        return getSuccessResponse(null);
+    }
 }

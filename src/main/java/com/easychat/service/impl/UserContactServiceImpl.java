@@ -1,6 +1,7 @@
 package com.easychat.service.impl;
 
 import com.easychat.entity.constants.Constants;
+import com.easychat.entity.dto.SysSettingDto;
 import com.easychat.entity.dto.TokenUserInfoDto;
 import com.easychat.entity.dto.UserContactSearchResultDto;
 import com.easychat.entity.po.GroupInfo;
@@ -15,8 +16,10 @@ import com.easychat.mapper.GroupInfoMapper;
 import com.easychat.mapper.UserContactApplyMapper;
 import com.easychat.mapper.UserContactMapper;
 import com.easychat.mapper.UserInfoMapper;
+import com.easychat.redis.RedisComponent;
 import com.easychat.service.UserContactApplyService;
 import com.easychat.service.UserContactService;
+import com.easychat.utils.ArrayUtils;
 import com.easychat.utils.CopyTools;
 import com.easychat.utils.StringTools;
 import jakarta.annotation.Resource;
@@ -24,6 +27,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -41,9 +47,10 @@ public class UserContactServiceImpl implements UserContactService {
     private GroupInfoMapper<GroupInfo, GroupInfoQuery> groupInfoMapper;
     @Resource
     private UserContactApplyMapper<UserContactApply, UserContactApplyQuery> userContactApplyMapper;
-    @Autowired
     @Resource
     private UserContactApplyService userContactApplyService;
+    @Resource
+    private RedisComponent redisComponent;
 
 	// 根据条件查询列表
 	public List<UserContact> findListByParam(UserContactQuery query) {
@@ -149,7 +156,12 @@ public class UserContactServiceImpl implements UserContactService {
         Integer joinType = null;
         String receiveUserId = contactId;
         UserContact userContact = userContactMapper.selectByUserIdAndContactId(applyUserId, contactId);
-        if (userContact != null && UserContactStatusEnum.BLACKLIST_BE.getStatus().byteValue() == userContact.getStatus()) {
+        if (userContact != null && ArrayUtils.contains(new Integer[] {
+                    UserContactStatusEnum.BLACKLIST.getStatus(),
+                    UserContactStatusEnum.BLACKLIST_BE_FIRST.getStatus()
+                }, userContact.getStatus())
+            )
+        {
             throw new BusinessException("对方已将你拉黑！");
         }
 
@@ -169,7 +181,7 @@ public class UserContactServiceImpl implements UserContactService {
         }
 
         if (JoinTypeEnum.JOIN.getType() == joinType) {
-            userContactApplyService.addContact(applyUserId, receiveUserId, contactId, typeEnum.getType(), applyInfo);
+            this.addContact(applyUserId, receiveUserId, contactId, typeEnum.getType(), applyInfo);
             return joinType;
         }
 
@@ -197,5 +209,60 @@ public class UserContactServiceImpl implements UserContactService {
         }
 
         return joinType;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void addContact(String applyUserId, String receiveUserId, String contactId, Integer contactType, String applyInfo) {
+        if (UserContactTypeEnum.GROUP.getType().equals(contactType)) {
+            UserContactQuery userContactQuery = new UserContactQuery();
+            userContactQuery.setContactId(contactId);
+            userContactQuery.setStatus(UserContactStatusEnum.FRIEND.getStatus().byteValue());
+            Integer count = userContactMapper.selectCount(userContactQuery);
+            SysSettingDto sysSettingDto = redisComponent.getSysSetting();
+            if (count >= sysSettingDto.getMaxGroupCount()) {
+                throw new BusinessException("群聊人数已满！");
+            }
+        }
+
+        Date curDate = new Date();
+        List<UserContact> contactList = new ArrayList<>();
+        UserContact userContact = new UserContact();
+        userContact.setUserId(applyUserId);
+        userContact.setContactId(contactId);
+        userContact.setContactType(contactType.byteValue());
+        userContact.setCreateTime(curDate);
+        userContact.setStatus(UserContactStatusEnum.FRIEND.getStatus().byteValue());
+        userContact.setLastUpdateTime(curDate);
+        contactList.add(userContact);
+
+        if (UserContactTypeEnum.USER.getType().equals(contactType)) {
+            userContact = new UserContact();
+            userContact.setUserId(receiveUserId);
+            userContact.setContactId(applyUserId);
+            userContact.setContactType(contactType.byteValue());
+            userContact.setCreateTime(curDate);
+            userContact.setStatus(UserContactStatusEnum.FRIEND.getStatus().byteValue());
+            userContact.setLastUpdateTime(curDate);
+            contactList.add(userContact);
+        }
+        userContactMapper.insertBatch(contactList);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void removeUserContact (String userId, String contactId, UserContactStatusEnum statusEnum) {
+        UserContact userContact = new UserContact();
+        userContact.setStatus(statusEnum.getStatus().byteValue());
+        userContactMapper.updateByUserIdAndContactId(userContact, userId, contactId);
+
+        UserContact friendContact = new UserContact();
+        if (UserContactStatusEnum.DEL == statusEnum) {
+            friendContact.setStatus(UserContactStatusEnum.DEL_BE.getStatus().byteValue());
+        } else if (UserContactStatusEnum.BLACKLIST == statusEnum) {
+            friendContact.setStatus(UserContactStatusEnum.BLACKLIST_BE.getStatus().byteValue());
+        }
+        userContactMapper.updateByUserIdAndContactId(friendContact, contactId, userId);
+
     }
 }

@@ -13,6 +13,7 @@ import com.easychat.mapper.UserContactApplyMapper;
 import com.easychat.mapper.UserContactMapper;
 import com.easychat.redis.RedisComponent;
 import com.easychat.service.UserContactApplyService;
+import com.easychat.service.UserContactService;
 import jakarta.annotation.Resource;
 import org.apache.catalina.User;
 import org.apache.ibatis.builder.BuilderException;
@@ -36,6 +37,8 @@ public class UserContactApplyServiceImpl implements UserContactApplyService {
     private UserContactMapper<UserContact, UserContactQuery> userContactMapper;
     @Resource
     private RedisComponent redisComponent;
+    @Resource
+    private UserContactService userContactService;
 
 	// 根据条件查询列表
 	public List<UserContactApply> findListByParam(UserContactApplyQuery query) {
@@ -133,7 +136,7 @@ public class UserContactApplyServiceImpl implements UserContactApplyService {
         }
 
         if (UserContactApplyStatusEnum.PASS.getStatus().equals(status)) {
-            this.addContact(applyInfo.getApplyUserId(), applyInfo.getReceiveUserId(), applyInfo.getContactId(), Integer.valueOf(applyInfo.getContactType()), applyInfo.getApplyInfo());
+            userContactService.addContact(applyInfo.getApplyUserId(), applyInfo.getReceiveUserId(), applyInfo.getContactId(), Integer.valueOf(applyInfo.getContactType()), applyInfo.getApplyInfo());
             return;
         }
 
@@ -144,47 +147,9 @@ public class UserContactApplyServiceImpl implements UserContactApplyService {
             userContact.setContactId(applyInfo.getContactId());
             userContact.setContactType(applyInfo.getContactType());
             userContact.setCreateTime(curDate);
-            userContact.setStatus(UserContactStatusEnum.BLACKLIST_BE.getStatus().byteValue());
+            userContact.setStatus(UserContactStatusEnum.BLACKLIST_BE_FIRST.getStatus().byteValue());
             userContact.setLastUpdateTime(curDate);
             userContactMapper.insertOrUpdate(userContact);
         }
-    }
-
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public void addContact(String applyUserId, String receiveUserId, String contactId, Integer contactType, String applyInfo) {
-        if (UserContactTypeEnum.GROUP.getType().equals(contactType)) {
-            UserContactQuery userContactQuery = new UserContactQuery();
-            userContactQuery.setContactId(contactId);
-            userContactQuery.setStatus(UserContactStatusEnum.FRIEND.getStatus().byteValue());
-            Integer count = userContactMapper.selectCount(userContactQuery);
-            SysSettingDto sysSettingDto = redisComponent.getSysSetting();
-            if (count >= sysSettingDto.getMaxGroupCount()) {
-                throw new BusinessException("群聊人数已满！");
-            }
-        }
-
-        Date curDate = new Date();
-        List<UserContact> contactList = new ArrayList<>();
-        UserContact userContact = new UserContact();
-        userContact.setUserId(applyUserId);
-        userContact.setContactId(contactId);
-        userContact.setContactType(contactType.byteValue());
-        userContact.setCreateTime(curDate);
-        userContact.setStatus(UserContactStatusEnum.FRIEND.getStatus().byteValue());
-        userContact.setLastUpdateTime(curDate);
-        contactList.add(userContact);
-
-        if (UserContactTypeEnum.USER.getType().equals(contactType)) {
-            userContact = new UserContact();
-            userContact.setUserId(receiveUserId);
-            userContact.setContactId(applyUserId);
-            userContact.setContactType(contactType.byteValue());
-            userContact.setCreateTime(curDate);
-            userContact.setStatus(UserContactStatusEnum.FRIEND.getStatus().byteValue());
-            userContact.setLastUpdateTime(curDate);
-            contactList.add(userContact);
-        }
-        userContactMapper.insertBatch(contactList);
     }
 }
