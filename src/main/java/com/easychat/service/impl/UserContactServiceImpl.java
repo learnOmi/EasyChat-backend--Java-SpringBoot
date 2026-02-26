@@ -17,18 +17,15 @@ import com.easychat.mapper.UserContactApplyMapper;
 import com.easychat.mapper.UserContactMapper;
 import com.easychat.mapper.UserInfoMapper;
 import com.easychat.redis.RedisComponent;
-import com.easychat.service.UserContactApplyService;
 import com.easychat.service.UserContactService;
 import com.easychat.utils.ArrayUtils;
 import com.easychat.utils.CopyTools;
 import com.easychat.utils.StringTools;
 import jakarta.annotation.Resource;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
@@ -47,8 +44,6 @@ public class UserContactServiceImpl implements UserContactService {
     private GroupInfoMapper<GroupInfo, GroupInfoQuery> groupInfoMapper;
     @Resource
     private UserContactApplyMapper<UserContactApply, UserContactApplyQuery> userContactApplyMapper;
-    @Resource
-    private UserContactApplyService userContactApplyService;
     @Resource
     private RedisComponent redisComponent;
 

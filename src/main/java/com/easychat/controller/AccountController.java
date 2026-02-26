@@ -12,6 +12,7 @@ import com.wf.captcha.ArithmeticCaptcha;
 import jakarta.annotation.Resource;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,7 +54,7 @@ public class AccountController extends ABaseController {
     }
 
     @RequestMapping("/register")
-    public ResponseVO register(@NotEmpty @Email String email, @NotEmpty String password, @NotEmpty String nickName, @NotEmpty String checkCode, @NotEmpty String checkCodeKey) {
+    public ResponseVO register(@NotEmpty @Email String email, @NotEmpty @Pattern(regexp = Constants.REGEX_PASSWORD) String password, @NotEmpty String nickName, @NotEmpty String checkCode, @NotEmpty String checkCodeKey) {
         try {
             if (!checkCode.equalsIgnoreCase((String) redisUtils.get(Constants.REDIS_KEY_CHECK_CODE + checkCodeKey))) {
                 throw new BusinessException("图片验证码不正确");

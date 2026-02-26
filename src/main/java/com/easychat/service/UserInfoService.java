@@ -5,7 +5,9 @@ import com.easychat.entity.po.UserInfo;
 import com.easychat.entity.query.UserInfoQuery;
 import com.easychat.entity.vo.PaginationResultVO;
 import com.easychat.entity.vo.UserInfoVO;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -55,4 +57,7 @@ public interface UserInfoService {
 
     // 登录
     UserInfoVO login(String email, String password);
+
+    // 更新用户信息
+    void updateUserInfo(UserInfo userInfo, MultipartFile avatarFile, MultipartFile avatarCover) throws IOException;
 }

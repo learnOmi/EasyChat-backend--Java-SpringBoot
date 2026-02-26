@@ -21,7 +21,10 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.springframework.stereotype.Service;
 import jakarta.annotation.Resource;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -34,8 +37,8 @@ import java.util.Map;
  */
 @Service("userInfoService")
 public class UserInfoServiceImpl implements UserInfoService {
-	@Resource
-	private UserInfoMapper<UserInfo, UserInfoQuery> userInfoMapper;
+    @Resource
+    private UserInfoMapper<UserInfo, UserInfoQuery> userInfoMapper;
     @Resource
     private UserInfoBeautyMapper<UserInfoBeauty, UserInfoQuery> userInfoBeautyMapper;
     @Resource
@@ -98,6 +101,7 @@ public class UserInfoServiceImpl implements UserInfoService {
     public Integer deleteUserInfoByUserId(String userId) {
         return this.userInfoMapper.deleteByUserId(userId);
     }
+
     // 根据Email查询
     public UserInfo getUserInfoByEmail(String email) {
         return this.userInfoMapper.selectByEmail(email);
@@ -115,7 +119,8 @@ public class UserInfoServiceImpl implements UserInfoService {
 
     /**
      * 用户注册方法
-     * @param email 用户邮箱
+     *
+     * @param email    用户邮箱
      * @param nickName 用户昵称
      * @param password 用户密码
      */
@@ -234,5 +239,29 @@ public class UserInfoServiceImpl implements UserInfoService {
 
         // 返回构建好的TokenUserInfoDto对象
         return tokenUserInfoDto;
+    }
+
+    // 更新用户信息
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updateUserInfo(UserInfo userInfo, MultipartFile avatarFile, MultipartFile avatarCover) throws IOException {
+        if (avatarFile != null) {
+            String baseFolder = appConfig.getProjectFolder() + Constants.FILE_FOLDER_FILE;
+            File targetFileFolder = new File(baseFolder + Constants.FILE_FOLDER_AVATAR);
+            if (!targetFileFolder.exists()) {
+                targetFileFolder.mkdirs();
+            }
+            String filePath = targetFileFolder.getPath() + "/" + userInfo.getUserId() + Constants.IMAGE_SUFFIX;
+            avatarFile.transferTo(new File(filePath));
+            avatarCover.transferTo(new File(filePath + Constants.COVER_IMAGE_SUFFIX));
+        }
+        UserInfo dbInfo = this.userInfoMapper.selectByUserId(userInfo.getUserId());
+        this.userInfoMapper.updateByUserId(userInfo, userInfo.getUserId());
+        String contactNameUpdate = null;
+        if (dbInfo.getNickName().equals(userInfo.getNickName())) {
+            contactNameUpdate = userInfo.getNickName();
+        }
+
+        //TODO 更新会话信息中的昵称信息
     }
 }
