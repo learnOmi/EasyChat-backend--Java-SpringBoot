@@ -60,4 +60,8 @@ public interface UserInfoService {
 
     // 更新用户信息
     void updateUserInfo(UserInfo userInfo, MultipartFile avatarFile, MultipartFile avatarCover) throws IOException;
+
+    void updateUserStatus(Integer status, String userId);
+
+    void forceOffLine(String userId);
 }

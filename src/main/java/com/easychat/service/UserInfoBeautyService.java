@@ -53,4 +53,6 @@ public interface UserInfoBeautyService {
 
     // 根据Email删除
     Integer deleteUserInfoBeautyByEmail(String email);
+
+    void saveAccount(UserInfoBeauty beauty);
 }
