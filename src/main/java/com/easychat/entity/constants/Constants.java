@@ -28,4 +28,5 @@ public class Constants {
 
     public static final String APP_UPDATE_FOLDER = "/appUpdate/";
     public static final String APP_EXE_SUFFIX = ".exe";
+    public static final String APP_NAME = "EasyChat";
 }

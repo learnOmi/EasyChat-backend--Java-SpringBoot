@@ -191,4 +191,9 @@ public class AppUpdationServiceImpl implements AppUpdationService {
         appUpdation.setGrayscaleUid(grayscalUid);
         appUpdationMapper.updateById(appUpdation, id);
     }
+
+    @Override
+    public AppUpdation getLatestUpdate(String appVersion, String uid) {
+        return appUpdationMapper.selectLatestUpdate(appVersion, uid);
+    }
 }

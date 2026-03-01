@@ -59,4 +59,6 @@ public interface AppUpdationService {
     void saveUpdate(AppUpdation appUpdation, MultipartFile file) throws IOException;
 
     void postUpdate(Integer id, Integer status, String grayscalUid);
+
+    AppUpdation getLatestUpdate(String appVersion, String uid);
 }
