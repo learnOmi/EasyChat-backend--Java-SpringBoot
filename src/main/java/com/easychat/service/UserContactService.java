@@ -42,6 +42,12 @@ public interface UserContactService {
 	// 根据UserIdAndContactId删除
 	Integer deleteUserContactByUserIdAndContactId(String userId, String contactId);
 
+    // 多条件更新
+    Integer updateByParam(UserContact bean, UserContactQuery query);
+
+    // 多条件更新
+    Integer deleteByParam(UserContactQuery query);
+
     UserContactSearchResultDto searchContact(String userId, String contactId);
 
     Integer applyAdd(TokenUserInfoDto tokenUserInfoDto, String contactId, String applyInfo);

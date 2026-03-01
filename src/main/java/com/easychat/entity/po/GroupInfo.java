@@ -33,6 +33,7 @@ public class GroupInfo implements Serializable {
 	private Byte status;
     // 成员数
     private Integer memberCount;
+    private String groupOwnerNickName;
 
 	public void setGroupId(String groupId) {
 		this.groupId = groupId;
@@ -96,6 +97,14 @@ public class GroupInfo implements Serializable {
 
     public void setMemberCount(Integer memberCount) {
         this.memberCount = memberCount;
+    }
+
+    public String getGroupOwnerNickName() {
+        return groupOwnerNickName;
+    }
+
+    public void setGroupOwnerNickName(String groupOwnerNickName) {
+        this.groupOwnerNickName = groupOwnerNickName;
     }
 
 	@Override

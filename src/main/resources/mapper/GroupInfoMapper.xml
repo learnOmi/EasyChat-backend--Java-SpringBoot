@@ -82,6 +82,12 @@
 	<!-- 查询列表 -->
 	<select id="selectList" resultMap="base_result_map">
 		SELECT <include refid="base_column_list"/>
+		<if test = "query.queryGroupOwnerName">
+            , (select nick_name from user_info where user_info.user_id = group_info.group_owner_id) as groupOwnerNickName
+        </if>
+		<if test="query.queryMemberCount">
+            , (select count(1) from user_contact where user_contact.contact_id = group_info.group_id ) as memberCount
+        </if>
 		FROM group_info 
 		<include refid="query_condition"/>
 		<if test="query.orderBy != null and query.orderBy != ''">

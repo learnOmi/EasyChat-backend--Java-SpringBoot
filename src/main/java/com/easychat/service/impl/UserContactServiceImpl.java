@@ -103,6 +103,16 @@ public class UserContactServiceImpl implements UserContactService {
 		return this.userContactMapper.deleteByUserIdAndContactId(userId, contactId);
 	}
 
+    // 多条件更新
+    public Integer updateByParam(UserContact bean, UserContactQuery query) {
+        return this.userContactMapper.updateByParam(bean, query);
+    }
+
+    // 多条件删除
+    public Integer deleteByParam(UserContactQuery query) {
+        return this.userContactMapper.deleteByParam(query);
+    }
+
     public UserContactSearchResultDto searchContact(String userId, String contactId) {
         UserContactTypeEnum typeEnum = UserContactTypeEnum.getByPrefix(contactId);
         if (typeEnum == null) {

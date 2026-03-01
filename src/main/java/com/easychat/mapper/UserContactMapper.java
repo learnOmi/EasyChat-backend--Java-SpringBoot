@@ -17,4 +17,10 @@ public interface UserContactMapper<T, P> extends BaseMapper {
 
 	// 根据UserIdAndContactId删除
 	Integer deleteByUserIdAndContactId(@Param("userId") String userId, @Param("contactId") String contactId);
+
+    // 多条件更新
+    Integer updateByParam(@Param("bean") T t, @Param("query") P p);
+
+    // 多条件删除
+    Integer deleteByParam(@Param("query") P p);
 }

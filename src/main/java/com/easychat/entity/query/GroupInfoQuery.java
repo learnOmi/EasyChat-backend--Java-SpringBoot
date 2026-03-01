@@ -33,6 +33,11 @@ public class GroupInfoQuery extends BaseQuery {
 	private Byte joinType;
 	// 状态1:正常0:解散
 	private Byte status;
+
+    private Boolean queryGroupOwnerName;
+
+    private Boolean queryMemberCount;
+
 	public void setGroupId(String groupId) {
 		this.groupId = groupId;
 	}
@@ -137,4 +142,18 @@ public class GroupInfoQuery extends BaseQuery {
 		return groupNoticeFuzzy;
 	}
 
+    public void setQueryGroupOwnerName(Boolean queryGroupOwnerName) {
+        this.queryGroupOwnerName = queryGroupOwnerName;
+    }
+    public Boolean getQueryGroupOwnerName() {
+        return queryGroupOwnerName;
+    }
+
+    public void setQueryMemberCount(Boolean queryMemberCount) {
+        this.queryMemberCount = queryMemberCount;
+    }
+
+    public Boolean getQueryMemberCount() {
+        return queryMemberCount;
+    }
 }

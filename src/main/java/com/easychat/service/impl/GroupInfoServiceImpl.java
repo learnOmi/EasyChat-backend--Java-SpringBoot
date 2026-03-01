@@ -8,11 +8,9 @@ import com.easychat.entity.po.UserContact;
 import com.easychat.entity.query.GroupInfoQuery;
 import com.easychat.entity.query.SimplePage;
 import com.easychat.entity.query.UserContactQuery;
+import com.easychat.entity.query.UserInfoQuery;
 import com.easychat.entity.vo.PaginationResultVO;
-import com.easychat.enums.PageSize;
-import com.easychat.enums.ResponseCodeEnum;
-import com.easychat.enums.UserContactStatusEnum;
-import com.easychat.enums.UserContactTypeEnum;
+import com.easychat.enums.*;
 import com.easychat.exception.BusinessException;
 import com.easychat.mapper.GroupInfoMapper;
 import com.easychat.mapper.UserContactMapper;
@@ -147,5 +145,32 @@ public class GroupInfoServiceImpl implements GroupInfoService {
         String filePath = targetFileFolder.getPath() + "/" + groupInfo.getGroupId() + Constants.IMAGE_SUFFIX;
         avatarFile.transferTo(new File(filePath));
         avatarCover.transferTo(new File(filePath + Constants.COVER_IMAGE_SUFFIX));
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void dissolutionGroup(String groupOwnerId, String groupId) {
+        GroupInfo dbInfo = this.groupInfoMapper.selectByGroupId(groupId);
+        if (null == dbInfo || !dbInfo.getGroupOwnerId().equals(groupOwnerId)) {
+            throw new BusinessException(ResponseCodeEnum.CODE_600);
+        }
+
+        // 删除群组
+        GroupInfo updateInfo = new GroupInfo();
+        updateInfo.setStatus(GroupStatusEnum.DISSOLUTION.getStatus().byteValue());
+        this.groupInfoMapper.updateByGroupId(updateInfo, groupId);
+
+        // 更新联系人信息
+        UserContactQuery userContactQuery = new UserContactQuery();
+        userContactQuery.setContactId(groupId);
+        userContactQuery.setContactType(UserContactTypeEnum.GROUP.getType().byteValue());
+
+        UserContact updateUserContact = new UserContact();
+        updateUserContact.setStatus(UserContactStatusEnum.DEL.getStatus().byteValue());
+        this.userContactMapper.updateByParam(updateUserContact, userContactQuery);
+
+        //TODO 移除相关群员的联系人缓存
+
+        //TODO 发消息：更新会话信息，记录群消息，发送解散通知消息
     }
 }
