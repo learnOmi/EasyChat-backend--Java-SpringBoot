@@ -25,4 +25,7 @@ public class Constants {
     public static final String APPLY_INFO_TEMPLATE = "我是%s";
 
     public static final String REGEX_PASSWORD = "^(?=.*\\d)(?=.*[a-zA-Z])[0-9A-Za-z~!@#$%^&*_]{8,10}$";
+
+    public static final String APP_UPDATE_FOLDER = "/appUpdate/";
+    public static final String APP_EXE_SUFFIX = ".exe";
 }
