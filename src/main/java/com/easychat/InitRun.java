@@ -1,6 +1,7 @@
 package com.easychat;
 
 import com.easychat.redis.RedisUtils;
+import com.easychat.websocket.netty.NettyWebSocketStarter;
 import io.lettuce.core.RedisConnectionException;
 import jakarta.annotation.Resource;
 import org.slf4j.Logger;
@@ -20,12 +21,15 @@ public class InitRun implements ApplicationRunner {
     private DataSource dataSource;
     @Resource
     private RedisUtils redisUtils;
+    @Resource
+    private NettyWebSocketStarter nettyWebSocketStarter;
 
     @Override
     public void run(ApplicationArguments args) throws Exception {
         try {
             dataSource.getConnection();
             redisUtils.get("test");
+            new Thread(nettyWebSocketStarter).start();
             logger.info("服务启动成功~");
         } catch (SQLException e) {
             logger.error("数据库连接失败，请检查数据库配置！", e);
