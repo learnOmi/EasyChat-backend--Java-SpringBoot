@@ -10,6 +10,7 @@ public class Constants {
     public static final String REDIS_KEY_SYS_SETTING = "easychat:sys:setting:";
     public static final Integer REDIS_TIME_1MIN = 60;
     public static final Integer REDIS_TIME_1DAY = 86400;
+    public static final Integer REDIS_KEY_EXPIRES_HEART_BEAT = 6;
 
     public static final String ROBOT_UID = UserContactTypeEnum.USER.getPrefix() + "robot";
 

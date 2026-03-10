@@ -1,9 +1,12 @@
 package com.easychat.websocket.netty;
 
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
+import io.netty.util.Attribute;
+import io.netty.util.AttributeKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,8 +32,11 @@ public class HanlderHeartBeat extends ChannelDuplexHandler {
             IdleStateEvent event = (IdleStateEvent) evt;
             // 检查是否为读空闲状态（即长时间没有收到数据）
             if (event.state() == IdleState.READER_IDLE){
+                Channel channel = ctx.channel();
+                Attribute<String> attribute = channel.attr(AttributeKey.valueOf(channel.id().toString()));
+                String userId = attribute.get();
                 // 记录读空闲超时的日志信息
-                looger.info("心跳检测超时:{}", event.state());
+                looger.info("用户userId:{}心跳检测超时:{}", userId, event.state());
                 ctx.close();  // 当读空闲超时时，关闭通道连接
             } else if (event.state() == IdleState.WRITER_IDLE) {
                 ctx.writeAndFlush("heart");  // 当写空闲时，发送心跳消息
