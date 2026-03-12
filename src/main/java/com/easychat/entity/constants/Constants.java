@@ -8,8 +8,10 @@ public class Constants {
     public static final String REDIS_KEY_WS_TOKEN = "easychat:ws:token:";
     public static final String REDIS_KEY_WS_TOKEN_USERID = "easychat:ws:token:userid:";
     public static final String REDIS_KEY_SYS_SETTING = "easychat:sys:setting:";
+    public static final String REDIS_KEY_USER_CONTACT = "easychat:ws:user:contact:";
     public static final Integer REDIS_TIME_1MIN = 60;
     public static final Integer REDIS_TIME_1DAY = 86400;
+    public static final Integer REDIS_TIME_2DAY = REDIS_TIME_1DAY * 2;
     public static final Integer REDIS_KEY_EXPIRES_HEART_BEAT = 6;
 
     public static final String ROBOT_UID = UserContactTypeEnum.USER.getPrefix() + "robot";
@@ -30,4 +32,6 @@ public class Constants {
     public static final String APP_UPDATE_FOLDER = "/appUpdate/";
     public static final String APP_EXE_SUFFIX = ".exe";
     public static final String APP_NAME = "EasyChat";
+
+    public static final Long MILLLSSECONDS_3DAY = 3 * 24 * 60 * 60 * 1000L;
 }

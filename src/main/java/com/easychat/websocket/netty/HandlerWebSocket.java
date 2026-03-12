@@ -44,7 +44,6 @@ public class HandlerWebSocket extends SimpleChannelInboundHandler<TextWebSocketF
         String userId = attribute.get();
         logger.info("收到userId{}消息: {}",userId, msg.text());
         redisComponent.saveHeartBeat(userId);
-        channelContextUtils.send2Group(msg.text());
     }
 
     /**
@@ -65,6 +64,7 @@ public class HandlerWebSocket extends SimpleChannelInboundHandler<TextWebSocketF
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         logger.info("有连接断开……");
+        channelContextUtils.removeContext(ctx.channel());
     }
 
     /**

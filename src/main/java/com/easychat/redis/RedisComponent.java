@@ -7,6 +7,8 @@ import io.netty.channel.Channel;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+
 @Component("redisComponent")
 public class RedisComponent {
     @Resource
@@ -18,6 +20,10 @@ public class RedisComponent {
 
     public void saveHeartBeat(String userId) {
         redisUtils.setex(Constants.REDIS_KEY_WS_USER_HEART_BEAT + userId, System.currentTimeMillis(), Constants.REDIS_KEY_EXPIRES_HEART_BEAT);
+    }
+
+    public void removeHeartBeat(String userId) {
+        redisUtils.delete(Constants.REDIS_KEY_WS_USER_HEART_BEAT + userId);
     }
 
     public void saveTokenUserInfoDto(TokenUserInfoDto tokenUserInfoDto) {
@@ -40,7 +46,15 @@ public class RedisComponent {
         redisUtils.set(Constants.REDIS_KEY_SYS_SETTING, sysSettingDto);
     }
 
-    public void saveChannel(String userId, Channel channel) {
-        redisUtils.set(Constants.REDIS_KEY_WS_TOKEN + userId, channel);
+    public void cleanUserContact(String userId) {
+        redisUtils.delete(Constants.REDIS_KEY_USER_CONTACT + userId);
+    }
+
+    public void addUserContactBatch(String userId, List<String> contactList) {
+        redisUtils.lpushAll(Constants.REDIS_KEY_USER_CONTACT + userId, contactList, Constants.REDIS_TIME_2DAY);
+    }
+
+    public List<String> getUserContactList(String userId) {
+        return (List<String>)redisUtils.get(Constants.REDIS_KEY_USER_CONTACT + userId);
     }
 }

@@ -3,13 +3,16 @@ package com.easychat.service.impl;
 import com.easychat.entity.config.AppConfig;
 import com.easychat.entity.constants.Constants;
 import com.easychat.entity.dto.TokenUserInfoDto;
+import com.easychat.entity.po.UserContact;
 import com.easychat.entity.po.UserInfoBeauty;
+import com.easychat.entity.query.UserContactQuery;
 import com.easychat.entity.vo.UserInfoVO;
 import com.easychat.enums.*;
 import com.easychat.entity.query.SimplePage;
 import com.easychat.entity.po.UserInfo;
 import com.easychat.entity.query.UserInfoQuery;
 import com.easychat.exception.BusinessException;
+import com.easychat.mapper.UserContactMapper;
 import com.easychat.mapper.UserInfoBeautyMapper;
 import com.easychat.mapper.UserInfoMapper;
 import com.easychat.entity.vo.PaginationResultVO;
@@ -41,6 +44,8 @@ public class UserInfoServiceImpl implements UserInfoService {
     private UserInfoMapper<UserInfo, UserInfoQuery> userInfoMapper;
     @Resource
     private UserInfoBeautyMapper<UserInfoBeauty, UserInfoQuery> userInfoBeautyMapper;
+    @Resource
+    private UserContactMapper<UserContact, UserContactQuery> userContactMapper;
     @Resource
     private AppConfig appConfig;
     @Resource
@@ -193,6 +198,16 @@ public class UserInfoServiceImpl implements UserInfoService {
         if (!(userInfo.getStatus() == UserStatusEnum.ENABLED.getStatus())) {
             // 抛出业务异常，提示账号已被禁用
             throw new BusinessException("账号已被禁用！");
+        }
+
+        // 查询联系人列表
+        UserContactQuery contactQuery = new UserContactQuery();
+        contactQuery.setUserId(userInfo.getUserId());
+        List<UserContact> contactList = this.userContactMapper.selectList(contactQuery);
+        List<String> contactIdList = contactList.stream().map(UserContact::getUserId).toList();
+        redisComponent.cleanUserContact(userInfo.getUserId());
+        if (!contactIdList.isEmpty()) {
+            redisComponent.addUserContactBatch(userInfo.getUserId(), contactIdList);
         }
 
         // 从Redis中获取用户最后一次的心跳时间
