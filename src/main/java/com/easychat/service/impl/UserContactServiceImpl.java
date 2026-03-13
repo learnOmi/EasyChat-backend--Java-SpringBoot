@@ -1,6 +1,7 @@
 package com.easychat.service.impl;
 
 import com.easychat.entity.constants.Constants;
+import com.easychat.entity.dto.MessageSendDto;
 import com.easychat.entity.dto.SysSettingDto;
 import com.easychat.entity.dto.TokenUserInfoDto;
 import com.easychat.entity.dto.UserContactSearchResultDto;
@@ -15,6 +16,7 @@ import com.easychat.service.UserContactService;
 import com.easychat.utils.ArrayUtils;
 import com.easychat.utils.CopyTools;
 import com.easychat.utils.StringTools;
+import com.easychat.websocket.ChannelContextUtils;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,6 +48,8 @@ public class UserContactServiceImpl implements UserContactService {
     private UserContactApplyMapper<UserContactApply, UserContactApplyQuery> userContactApplyMapper;
     @Resource
     private RedisComponent redisComponent;
+    @Resource
+    private ChannelContextUtils channelContextUtils;
 
 	// 根据条件查询列表
 	public List<UserContact> findListByParam(UserContactQuery query) {
@@ -210,7 +214,10 @@ public class UserContactServiceImpl implements UserContactService {
         }
 
         if (dbApply == null || !(UserContactApplyStatusEnum.INIT.getStatus().byteValue() == dbApply.getStatus())) {
-
+            MessageSendDto messageSendDto = new MessageSendDto();
+            messageSendDto.setMessageType(MessageTypeEnum.CONTACT_APPLY.getType());
+            messageSendDto.setMessageContent(applyInfo);
+            messageSendDto.setContactId(receiveUserId);
         }
 
         return joinType;

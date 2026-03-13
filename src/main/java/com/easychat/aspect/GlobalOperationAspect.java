@@ -66,8 +66,4 @@ public class GlobalOperationAspect {
             throw new BusinessException(ResponseCodeEnum.CODE_404);
         }
     }
-
-    private void checkAdmin() {
-
-    }
 }

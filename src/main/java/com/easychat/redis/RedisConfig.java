@@ -1,5 +1,11 @@
 package com.easychat.redis;
 
+import org.redisson.Redisson;
+import org.redisson.api.RedissonClient;
+import org.redisson.config.Config;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -14,6 +20,13 @@ import org.springframework.data.redis.serializer.RedisSerializer;
  */
 @Configuration
 public class RedisConfig<V> {
+    private static final Logger logger = LoggerFactory.getLogger(RedisConfig.class);
+
+    @Value("${spring.data.redis.host:}")
+    private String redisHost;
+    @Value("${spring.data.redis.port:}")
+    private Integer redisPort;
+
     /**
      * 创建并配置RedisTemplate Bean
      *
@@ -38,6 +51,32 @@ public class RedisConfig<V> {
         redisTemplate.afterPropertiesSet();
         // 返回配置完成的RedisTemplate
         return redisTemplate;
+    }
+
+/**
+ * 创建并配置Redisson客户端Bean
+ * 该方法使用Spring的@Bean注解将RedissonClient注册为Spring容器中的一个Bean
+ * 设置了Bean的名称为"redissonClient"，并配置了销毁方法为"shutdown"
+ *
+ * @return 返回配置好的RedissonClient实例，如果配置失败则返回null
+ */
+    @Bean(name = "redissonClient", destroyMethod = "shutdown")
+    public RedissonClient redissonClient(){
+        try {
+        // 创建Redisson配置对象
+            Config config = new Config();
+        // 配置使用单服务器模式，并设置Redis服务器的主机和端口
+            config.useSingleServer().setAddress("redis://" + redisHost + ":" + redisPort);
+        // 根据配置创建Redisson客户端实例
+            RedissonClient redissonClient = Redisson.create(config);
+        // 返回创建的客户端实例
+            return redissonClient;
+        } catch (Exception e) {
+        // 捕获并处理可能出现的异常，打印错误日志
+            logger.info("redis配置错误，请检查配置！");
+        }
+        // 如果出现异常，返回null
+        return null;
     }
 
 }
