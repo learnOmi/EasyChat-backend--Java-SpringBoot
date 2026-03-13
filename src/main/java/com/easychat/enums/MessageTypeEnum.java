@@ -1,0 +1,48 @@
+package com.easychat.enums;
+
+public enum MessageTypeEnum {
+    INIT(0, "", "连接WS获取信息"),
+    ADD_FRIEND(1, "", "添加好友打招呼消息"),
+    CHAT(2, "", "普通聊天消息"),
+    GROUP_CREATE(3, "群组已经创建成功，请尽情畅聊", "群创建成功"),
+    CONTACT_APPLY(4, "", "好友申请"),
+    MEDIA_CHAT(5, "", "媒体文件"),
+    FILE_UPLOAD(6, "", "文件上传完成"),
+    FORCE_OFF_LINE(7, "", "强制下线"),
+    DISSOLUTION_GROUP(8, "群聊已解散", "解散群聊"),
+    ADD_GROUP(9, "%s加入了群组", "加入群聊"),
+    GROUP_NAME_UPDATE(10, "", "更新群昵称"),
+    LEAVE_GROUP(11, "%s离开了群组", "退出群聊"),
+    REMOVE_GROUP(12, "%s被移出群组", "移出群聊");
+
+    private Integer type;
+    private String initMessage;
+    private String desc;
+
+    MessageTypeEnum(Integer type, String initMessage, String desc) {
+        this.type = type;
+        this.initMessage = initMessage;
+        this.desc = desc;
+    }
+
+    public static MessageTypeEnum getByType(Integer type) {
+        for (MessageTypeEnum messageType : MessageTypeEnum.values()) {
+            if (messageType.getType().equals(type)) {
+                return messageType;
+            }
+        }
+        return null;
+    }
+
+    public Integer getType() {
+        return type;
+    }
+
+    public String getInitMessage() {
+        return initMessage;
+    }
+
+    public String getDesc() {
+        return desc;
+    }
+}

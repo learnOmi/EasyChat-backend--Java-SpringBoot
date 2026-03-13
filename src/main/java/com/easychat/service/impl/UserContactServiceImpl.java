@@ -4,18 +4,12 @@ import com.easychat.entity.constants.Constants;
 import com.easychat.entity.dto.SysSettingDto;
 import com.easychat.entity.dto.TokenUserInfoDto;
 import com.easychat.entity.dto.UserContactSearchResultDto;
-import com.easychat.entity.po.GroupInfo;
-import com.easychat.entity.po.UserContact;
-import com.easychat.entity.po.UserContactApply;
-import com.easychat.entity.po.UserInfo;
+import com.easychat.entity.po.*;
 import com.easychat.entity.query.*;
 import com.easychat.entity.vo.PaginationResultVO;
 import com.easychat.enums.*;
 import com.easychat.exception.BusinessException;
-import com.easychat.mapper.GroupInfoMapper;
-import com.easychat.mapper.UserContactApplyMapper;
-import com.easychat.mapper.UserContactMapper;
-import com.easychat.mapper.UserInfoMapper;
+import com.easychat.mapper.*;
 import com.easychat.redis.RedisComponent;
 import com.easychat.service.UserContactService;
 import com.easychat.utils.ArrayUtils;
@@ -42,6 +36,12 @@ public class UserContactServiceImpl implements UserContactService {
     private UserInfoMapper<UserInfo, UserInfoQuery> userInfoMapper;
     @Resource
     private GroupInfoMapper<GroupInfo, GroupInfoQuery> groupInfoMapper;
+    @Resource
+    private ChatSessionMapper<ChatSession, ChatSessionQuery> chatSessionMapper;
+    @Resource
+    private ChatSessionUserMapper<ChatSessionUser, ChatSessionUserQuery> chatSessionUserMapper;
+    @Resource
+    private ChatMessageMapper<ChatMessage, ChatMessageQuery> chatMessageMapper;
     @Resource
     private UserContactApplyMapper<UserContactApply, UserContactApplyQuery> userContactApplyMapper;
     @Resource
@@ -269,5 +269,54 @@ public class UserContactServiceImpl implements UserContactService {
         }
         userContactMapper.updateByUserIdAndContactId(friendContact, contactId, userId);
 
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void addContactRobot(String userId) {
+        // 添加联系人信息
+        Date curDate = new Date();
+        SysSettingDto sysSettingDto = redisComponent.getSysSetting();
+        String contactId = sysSettingDto.getRobotUid();
+        String contactName = sysSettingDto.getRobotNickName();
+        String sendMessage = sysSettingDto.getRobotWelcome();
+        sendMessage = StringTools.cleanHtmlTag(sendMessage);
+
+        UserContact userContact = new UserContact();
+        userContact.setUserId(userId);
+        userContact.setContactId(contactId);
+        userContact.setContactType(UserContactTypeEnum.USER.getType().byteValue());
+        userContact.setCreateTime(curDate);
+        userContact.setLastUpdateTime(curDate);
+        userContact.setStatus(UserContactStatusEnum.FRIEND.getStatus().byteValue());
+        userContactMapper.insert(userContact);
+
+        // 添加会话信息
+        String sessionId = StringTools.getChatSessionId4User(new String[]{userId, contactId});
+        ChatSession chatSession = new ChatSession();
+        chatSession.setSessionId(sessionId);
+        chatSession.setLastMessage(sendMessage);
+        chatSession.setLastReceiveTime(curDate.getTime());
+        this.chatSessionMapper.insert(chatSession);
+
+        ChatSessionUser chatSessionUser = new ChatSessionUser();
+        chatSessionUser.setUserId(userId);
+        chatSessionUser.setContactId(contactId);
+        chatSessionUser.setContactName(contactName);
+        chatSessionUser.setSessionId(sessionId);
+        this.chatSessionUserMapper.insert(chatSessionUser);
+
+        // 添加消息
+        ChatMessage chatMessage = new ChatMessage();
+        chatMessage.setSessionId(sessionId);
+        chatMessage.setMessageType(MessageTypeEnum.CHAT.getType().byteValue());
+        chatMessage.setMessageContent(sendMessage);
+        chatMessage.setSendUserId(contactId);
+        chatMessage.setSendUserNickName(contactName);
+        chatMessage.setSendTime(curDate.getTime());
+        chatMessage.setContactId(userId);
+        chatMessage.setContactType(UserContactTypeEnum.USER.getType().byteValue());
+        chatMessage.setStatus(MessageStatusEnum.SENDED.getStatus().byteValue());
+        chatMessageMapper.insert(chatMessage);
     }
 }

@@ -5,9 +5,11 @@ import com.easychat.enums.UserContactTypeEnum;
 import com.easychat.exception.BusinessException;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 
 public class StringTools {
     public static void checkParam(Object param) {
@@ -75,4 +77,16 @@ public class StringTools {
         return StringTools.isEmpty(originStr) ? null : DigestUtils.md5Hex(originStr);
     }
 
+    public static String cleanHtmlTag(String content) {
+        if (isEmpty(content)) {
+            return content;
+        }
+        content = content.replace("<", "&lt;").replace("\r\n", "<br/>").replace("\n", "<br/>");
+        return content;
+    }
+
+    public static String getChatSessionId4User(String[] userIds) {
+        Arrays.sort(userIds);
+        return encodeMd5(StringUtils.join(userIds, ""));
+    }
 }

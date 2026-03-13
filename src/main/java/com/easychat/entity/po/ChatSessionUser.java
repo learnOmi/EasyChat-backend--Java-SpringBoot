@@ -1,5 +1,7 @@
 package com.easychat.entity.po;
 
+import com.easychat.enums.UserContactTypeEnum;
+
 import java.io.Serializable;
 /**
  * 会话用户
@@ -7,6 +9,8 @@ import java.io.Serializable;
  * @since 2026/03/13
  */
 public class ChatSessionUser implements Serializable {
+    private static final long serialVersionUID = -882472298829182760L;
+
 	// 用户ID
 	private String userId;
 	// 联系人ID
@@ -16,7 +20,23 @@ public class ChatSessionUser implements Serializable {
 	// 联系人名称
 	private String contactName;
 
-	public void setUserId(String userId) {
+    private String lastMessage;
+
+    private String lastReceiveTime;
+
+    private Integer memberCount;
+
+    private Integer contactType;
+
+    public Integer getContactType() {
+        return UserContactTypeEnum.getByPrefix(contactId).getType();
+    }
+
+    public void setContactType(Integer contactType) {
+        this.contactType = contactType;
+    }
+
+    public void setUserId(String userId) {
 		this.userId = userId;
 	}
 
@@ -47,6 +67,30 @@ public class ChatSessionUser implements Serializable {
 	public String getContactName() {
 		return contactName;
 	}
+
+    public String getLastMessage() {
+        return lastMessage;
+    }
+
+    public void setLastMessage(String lastMessage) {
+        this.lastMessage = lastMessage;
+    }
+
+    public String getLastReceiveTime() {
+        return lastReceiveTime;
+    }
+
+    public void setLastReceiveTime(String lastReceiveTime) {
+        this.lastReceiveTime = lastReceiveTime;
+    }
+
+    public Integer getMemberCount() {
+        return memberCount;
+    }
+
+    public void setMemberCount(Integer memberCount) {
+        this.memberCount = memberCount;
+    }
 
 	@Override
 	public String toString() {

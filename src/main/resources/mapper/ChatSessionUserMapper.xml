@@ -60,8 +60,16 @@
 
 	<!-- 查询列表 -->
 	<select id="selectList" resultMap="base_result_map">
-		SELECT <include refid="base_column_list"/>
-		FROM chat_session_user 
+		SELECT
+          chat_session_user.*,
+          chat_session.last_message lastMessage,
+          chat_session.last_receive_time lastReceiveTime,
+          case when SUBSTRING(contact_id, 1, 1) = 'G'
+		    then (select count(1) from user_contact where user_contact.contact_id = chat_session_user.contact_id)
+		    else 0
+		  end memberCount
+		FROM chat_session_user
+		    inner join chat_seesion on chat_session_user.session_id = chat_session.id
 		<include refid="query_condition"/>
 		<if test="query.orderBy != null and query.orderBy != ''">
 			order by ${query.orderBy}

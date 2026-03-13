@@ -17,10 +17,12 @@ import com.easychat.mapper.UserInfoBeautyMapper;
 import com.easychat.mapper.UserInfoMapper;
 import com.easychat.entity.vo.PaginationResultVO;
 import com.easychat.redis.RedisComponent;
+import com.easychat.service.UserContactService;
 import com.easychat.service.UserInfoService;
 import com.easychat.utils.CopyTools;
 import com.easychat.utils.StringTools;
 import org.apache.commons.lang3.ArrayUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import jakarta.annotation.Resource;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,6 +48,8 @@ public class UserInfoServiceImpl implements UserInfoService {
     private UserInfoBeautyMapper<UserInfoBeauty, UserInfoQuery> userInfoBeautyMapper;
     @Resource
     private UserContactMapper<UserContact, UserContactQuery> userContactMapper;
+    @Resource
+    private UserContactService userContactService;
     @Resource
     private AppConfig appConfig;
     @Resource
@@ -168,12 +172,15 @@ public class UserInfoServiceImpl implements UserInfoService {
         // 插入用户信息到数据库
         this.userInfoMapper.insert(userInfo);
 
-        // 如果使用了靓号，更新美容师账户状态为已使用
+        // 如果使用了靓号，更新靓号状态为已使用
         if (useBeautyAccount) {
             UserInfoBeauty updateBeauty = new UserInfoBeauty();
             updateBeauty.setStatus((byte) BeautyAccountStatusEnum.USED.getStatus());
             this.userInfoBeautyMapper.updateById(updateBeauty, beautyAccount.getId());
         }
+
+        // 添加机器人好友
+        userContactService.addContactRobot(userId);
     }
 
     /**
