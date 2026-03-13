@@ -1,5 +1,7 @@
 package com.easychat.entity.query;
 
+import java.util.List;
+
 /**
  * 聊天消息表查询
  * @author 'Tong'
@@ -44,7 +46,28 @@ public class ChatMessageQuery extends BaseQuery {
 	private Byte fileType;
 	// 状态0:正在发送1:已发送
 	private Byte status;
-	public void setMessageId(Long messageId) {
+
+    private List<String> contactIdList;
+
+    private Long lastReceiveTime;
+
+    public Long getLastReceiveTime() {
+        return lastReceiveTime;
+    }
+
+    public void setLastReceiveTime(Long lastReceiveTime) {
+        this.lastReceiveTime = lastReceiveTime;
+    }
+
+    public List<String> getContactIdList() {
+        return contactIdList;
+    }
+
+    public void setContactIdList(List<String> contactIdList) {
+        this.contactIdList = contactIdList;
+    }
+
+    public void setMessageId(Long messageId) {
 		this.messageId = messageId;
 	}
 

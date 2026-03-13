@@ -3,12 +3,19 @@ package com.easychat.websocket;
 import com.easychat.entity.constants.Constants;
 import com.easychat.entity.dto.MessageSendDto;
 import com.easychat.entity.dto.WsInitData;
+import com.easychat.entity.po.ChatMessage;
 import com.easychat.entity.po.ChatSessionUser;
+import com.easychat.entity.po.UserContactApply;
 import com.easychat.entity.po.UserInfo;
+import com.easychat.entity.query.ChatMessageQuery;
 import com.easychat.entity.query.ChatSessionUserQuery;
+import com.easychat.entity.query.UserContactApplyQuery;
 import com.easychat.entity.query.UserInfoQuery;
 import com.easychat.enums.MessageTypeEnum;
+import com.easychat.enums.UserContactApplyStatusEnum;
 import com.easychat.enums.UserContactTypeEnum;
+import com.easychat.mapper.ChatMessageMapper;
+import com.easychat.mapper.UserContactApplyMapper;
 import com.easychat.mapper.UserInfoMapper;
 import com.easychat.redis.RedisComponent;
 import com.easychat.service.ChatSessionUserService;
@@ -43,6 +50,10 @@ public class ChannelContextUtils {
     private UserInfoMapper<UserInfo, UserInfoQuery> userInfoMapper;
     @Resource
     private ChatSessionUserService chatSessionUserService;
+    @Resource
+    private ChatMessageMapper<ChatMessage, ChatMessageQuery> chatMessageMapper;
+    @Resource
+    private UserContactApplyMapper<UserContactApply, UserContactApplyQuery> userContactApplyMapper;
 
     public ChannelContextUtils(RedisComponent redisComponent) {
         this.redisComponent = redisComponent;
@@ -87,8 +98,23 @@ public class ChannelContextUtils {
 
         WsInitData wsInitData = new WsInitData();
         wsInitData.setChatSessionList(chatSessionUserList);
-        wsInitData.setChatMessageList(new ArrayList<>());
-        wsInitData.setApplyCount(0);
+
+        // 查询聊天信息
+        List<String> groupIdList = contactIdList.stream().filter(item -> item.startsWith(UserContactTypeEnum.GROUP.getPrefix())).toList();
+        groupIdList.add(userId);
+        ChatMessageQuery messageQuery = new ChatMessageQuery();
+        messageQuery.setContactIdList(groupIdList);
+        messageQuery.setLastReceiveTime(lastOffTime);
+        List<ChatMessage> chatMessageList = chatMessageMapper.selectList(messageQuery);
+        wsInitData.setChatMessageList(chatMessageList);
+
+        // 查询好友申请
+        UserContactApplyQuery applyQuery = new UserContactApplyQuery();
+        applyQuery.setReceiveUserId(userId);
+        applyQuery.setLastApplyTimestamp(lastOffTime);
+        applyQuery.setStatus(UserContactApplyStatusEnum.INIT.getStatus().byteValue());
+        Integer applyCount = userContactApplyMapper.selectCount(applyQuery);
+        wsInitData.setApplyCount(applyCount);
 
 
         // 发送消息

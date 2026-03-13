@@ -99,6 +99,16 @@
 		<if test="query.fileNameFuzzy != null and query.fileNameFuzzy !=''">
 			and file_name like concat('%',#{query.fileNameFuzzy},'%')
 		</if>
+		<!-- 额外添加的条件 -->
+		<if test="query.lastReceiveTime != null and query.lastReceiveTime !=''">
+            and send_time &gt; #{query.lastReceiveTime}
+        </if>
+        <if test="query.contactIdList != null and query.contactIdList.size() > 0">
+            and contact_id in
+            <foreach collection="query.contactIdList" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
 	</sql>
 
 	<!-- 通用查询条件 -->
