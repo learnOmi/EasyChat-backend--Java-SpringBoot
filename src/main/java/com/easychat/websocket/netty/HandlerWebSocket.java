@@ -69,9 +69,9 @@ public class HandlerWebSocket extends SimpleChannelInboundHandler<TextWebSocketF
 
     /**
      * 处理用户触发的事件
-     * 主要用于处理WebSocket握手完成后的用户认证逻辑
-     * @param ctx 通道处理上下文
-     * @param evt 触发的事件
+     * 主要用于处理WebSocket握手完成后的用户认证，添加用户ID和通道的对应关系
+     * @param ctx ChannelHandlerContext 通道处理器上下文
+     * @param evt Object 触发的事件对象
      * @throws Exception 可能抛出的异常
      */
     @Override
@@ -93,6 +93,7 @@ public class HandlerWebSocket extends SimpleChannelInboundHandler<TextWebSocketF
                 return;
             }
 
+            // 将用户ID和对应的通道添加到上下文工具中
             channelContextUtils.addContext(tokenUserInfoDto.getUserId(), ctx.channel());
         }
     }

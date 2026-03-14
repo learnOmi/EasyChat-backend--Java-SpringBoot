@@ -62,6 +62,14 @@ public class RedisComponent {
         redisUtils.lpushAll(Constants.REDIS_KEY_USER_CONTACT + userId, contactList, Constants.REDIS_TIME_2DAY);
     }
 
+    public void addUserContact(String userId, String contactId) {
+        List<String> contactIdList = getUserContactList(userId);
+        if (contactIdList.contains(contactId)) {
+            return;
+        }
+        redisUtils.lpush(Constants.REDIS_KEY_USER_CONTACT + userId, contactId, Constants.REDIS_TIME_2DAY);
+    }
+
     public List<String> getUserContactList(String userId) {
         return (List<String>)redisUtils.getQueueList(Constants.REDIS_KEY_USER_CONTACT + userId);
     }

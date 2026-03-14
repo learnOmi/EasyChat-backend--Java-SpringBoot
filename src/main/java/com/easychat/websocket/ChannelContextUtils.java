@@ -136,8 +136,17 @@ public class ChannelContextUtils {
             return;
         }
 
-        messageSendDto.setContactId(messageSendDto.getSenderId());
-        messageSendDto.setContactName(messageSendDto.getSenderNickName());
+        if (MessageTypeEnum.ADD_FRIEND_SELF.getType().equals(messageSendDto.getMessageType())) {
+            // 因为申请别人作为自己的好友，需要别人同意后再从WS触发发送消息给申请人，而不是像普通聊天时自己发送的消息直接从本地渲染
+            UserInfo userInfo = (UserInfo) messageSendDto.getExtendData();
+            messageSendDto.setMessageType(MessageTypeEnum.ADD_FRIEND.getType());
+            messageSendDto.setContactId(userInfo.getUserId());
+            messageSendDto.setContactName(userInfo.getNickName());
+            messageSendDto.setExtendData(null);
+        } else {
+            messageSendDto.setContactId(messageSendDto.getSenderId());
+            messageSendDto.setContactName(messageSendDto.getSenderNickName());
+        }
         channel.writeAndFlush(new TextWebSocketFrame(JsonUtils.convertObj2Json(messageSendDto)));
     }
 
