@@ -13,6 +13,7 @@ import com.easychat.redis.RedisComponent;
 import com.easychat.service.UserContactService;
 import com.easychat.utils.CopyTools;
 import com.easychat.utils.StringTools;
+import com.easychat.websocket.ChannelContextUtils;
 import com.easychat.websocket.MessageHandler;
 import jakarta.annotation.Resource;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,8 +45,10 @@ public class UserContactServiceImpl implements UserContactService {
     private ChatMessageMapper<ChatMessage, ChatMessageQuery> chatMessageMapper;
     @Resource
     private RedisComponent redisComponent;
-    @Autowired
+    @Resource
     private MessageHandler messageHandler;
+    @Resource
+    private ChannelContextUtils channelContextUtils;
 
     // 根据条件查询列表
 	public List<UserContact> findListByParam(UserContactQuery query) {
@@ -189,7 +192,7 @@ public class UserContactServiceImpl implements UserContactService {
             redisComponent.addUserContact(receiveUserId, applyUserId);
         }
 
-        redisComponent.addUserContact(receiveUserId, contactId);
+        redisComponent.addUserContact(applyUserId, contactId);
 
         String sessionId = null;
         if (UserContactTypeEnum.USER.getType().equals(contactType)) {
@@ -244,6 +247,45 @@ public class UserContactServiceImpl implements UserContactService {
             messageSendDto.setMessageType(MessageTypeEnum.ADD_FRIEND_SELF.getType());
             messageSendDto.setContactId(applyUserId);
             messageSendDto.setExtendData(contactUser);
+            messageHandler.sendMessage(messageSendDto);
+        } else {
+            ChatSessionUser chatSessionUser = new ChatSessionUser();
+            chatSessionUser.setUserId(applyUserId);
+            chatSessionUser.setContactId(contactId);
+            GroupInfo groupInfo = this.groupInfoMapper.selectByGroupId(contactId);
+            chatSessionUser.setContactName(groupInfo.getGroupName());
+            chatSessionUser.setSessionId(sessionId);
+            this.chatSessionUserMapper.insert(chatSessionUser);
+
+            UserInfo applyUser = this.userInfoMapper.selectByUserId(applyUserId);
+            String sendMessage = String.format(MessageTypeEnum.ADD_GROUP.getInitMessage(), applyUser.getNickName());
+            ChatSession chatSession = new ChatSession();
+            chatSession.setSessionId(sessionId);
+            chatSession.setLastReceiveTime(curDate.getTime());
+            chatSession.setLastMessage(sendMessage);
+            this.chatSessionMapper.insertOrUpdate(chatSession);
+
+            ChatMessage chatMessage = new ChatMessage();
+            chatMessage.setSessionId(sessionId);
+            chatMessage.setMessageType(MessageTypeEnum.ADD_GROUP.getType().byteValue());
+            chatMessage.setMessageContent(sendMessage);
+            chatMessage.setSendTime(curDate.getTime());
+            chatMessage.setContactId(contactId);
+            chatMessage.setContactType(UserContactTypeEnum.GROUP.getType().byteValue());
+            chatMessage.setStatus(MessageStatusEnum.SENDED.getStatus().byteValue());
+            this.chatMessageMapper.insert(chatMessage);
+
+            redisComponent.addUserContact(applyUserId, groupInfo.getGroupId());
+            channelContextUtils.addUser2Group(applyUserId, groupInfo.getGroupId());
+
+            UserContactQuery userContactQuery = new UserContactQuery();
+            userContactQuery.setContactId(contactId);
+            userContactQuery.setStatus(UserContactStatusEnum.FRIEND.getStatus().byteValue());
+            Integer memberCount = this.userContactMapper.selectCount(userContactQuery);
+            MessageSendDto messageSendDto = CopyTools.copy(chatMessage, MessageSendDto.class);
+            messageSendDto.setContactId(contactId);
+            messageSendDto.setMemberCount(memberCount);
+            messageSendDto.setContactName(groupInfo.getGroupName());
             messageHandler.sendMessage(messageSendDto);
         }
     }

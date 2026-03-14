@@ -38,10 +38,16 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * 通道上下文工具类，用于管理用户和群组的WebSocket连接
+ * 提供添加、移除、发送消息等功能，并处理用户上线、下线状态
+ */
 @Component
 public class ChannelContextUtils {
     private static final Logger logger = LoggerFactory.getLogger(ChannelContextUtils.class);
+    // 存储用户ID与WebSocket通道的映射关系
     private static final ConcurrentHashMap<String, Channel> USER_CONTEXT_MAP = new ConcurrentHashMap<>();
+    // 存储群组ID与通道组的映射关系
     private static final ConcurrentHashMap<String, ChannelGroup> GROUP_CONTEXT_MAP = new ConcurrentHashMap<>();
 
     @Resource
@@ -55,10 +61,19 @@ public class ChannelContextUtils {
     @Resource
     private UserContactApplyMapper<UserContactApply, UserContactApplyQuery> userContactApplyMapper;
 
+    /**
+     * 构造函数，注入Redis组件
+     * @param redisComponent Redis组件
+     */
     public ChannelContextUtils(RedisComponent redisComponent) {
         this.redisComponent = redisComponent;
     }
 
+    /**
+     * 添加用户上下文信息
+     * @param userId 用户ID
+     * @param channel WebSocket通道
+     */
     public void addContext(String userId, Channel channel) {
         String channelId = channel.id().toString();
         AttributeKey attributeKey = null;
@@ -126,6 +141,11 @@ public class ChannelContextUtils {
         sendMsg(messageSendDto, userId);
     }
 
+    /**
+     * 发送消息给指定用户
+     * @param messageSendDto 消息发送DTO
+     * @param reciveId 接收者ID
+     */
     public static void sendMsg(MessageSendDto messageSendDto, String reciveId) {
         if (reciveId == null) {
             return;
@@ -150,6 +170,10 @@ public class ChannelContextUtils {
         channel.writeAndFlush(new TextWebSocketFrame(JsonUtils.convertObj2Json(messageSendDto)));
     }
 
+    /**
+     * 发送消息
+     * @param messageSendDto 消息发送DTO
+     */
     public void sendMessage(MessageSendDto messageSendDto) {
         UserContactTypeEnum contactTypeEnum = UserContactTypeEnum.getByPrefix(messageSendDto.getContactId());
         switch (contactTypeEnum) {
@@ -162,6 +186,10 @@ public class ChannelContextUtils {
         }
     }
 
+    /**
+     * 发送消息给指定用户
+     * @param messageSendDto 消息发送DTO
+     */
     private void send2User(MessageSendDto messageSendDto) {
         String contactId = messageSendDto.getContactId();
         if (StringTools.isEmpty(contactId)) return;
@@ -172,6 +200,10 @@ public class ChannelContextUtils {
         }
     }
 
+    /**
+     * 发送消息到群组
+     * @param messageSendDto 消息发送DTO
+     */
     private void send2Group(MessageSendDto messageSendDto) {
         if (StringTools.isEmpty(messageSendDto.getContactId())) {
             return;
@@ -182,15 +214,35 @@ public class ChannelContextUtils {
         }
     }
 
+    /**
+     * 添加用户到群组
+     * @param userId 用户ID
+     * @param groupId 群组ID
+     */
+    public void addUser2Group(String userId, String groupId) {
+        Channel channel = USER_CONTEXT_MAP.get(userId);
+        add2Group(groupId, channel);
+    }
+
+    /**
+     * 添加通道到群组
+     * @param groupId 群组ID
+     * @param channel WebSocket通道
+     */
     private void add2Group(String groupId, Channel channel) {
         ChannelGroup group = GROUP_CONTEXT_MAP.get(groupId);
         if (group == null) {
             group = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
             GROUP_CONTEXT_MAP.put(groupId, group);
         }
+        if (channel == null) return;
         group.add(channel);
     }
 
+    /**
+     * 关闭用户上下文
+     * @param userId 用户ID
+     */
     public void closeContext(String userId){
         if (StringTools.isEmpty(userId)) {
             return;
@@ -202,6 +254,10 @@ public class ChannelContextUtils {
         }
     }
 
+    /**
+     * 移除用户上下文
+     * @param channel WebSocket通道
+     */
     public void removeContext(Channel channel) {
         Attribute<String> attribute = channel.attr(AttributeKey.valueOf(channel.id().toString()));
         String userId = attribute.get();
