@@ -1,26 +1,30 @@
 package com.easychat.service.impl;
 
-import com.easychat.entity.dto.SysSettingDto;
+import com.easychat.entity.constants.Constants;
+import com.easychat.entity.dto.MessageSendDto;
+import com.easychat.entity.dto.TokenUserInfoDto;
+import com.easychat.entity.po.GroupInfo;
 import com.easychat.entity.po.UserContact;
 import com.easychat.entity.po.UserContactApply;
-import com.easychat.entity.query.SimplePage;
-import com.easychat.entity.query.UserContactApplyQuery;
-import com.easychat.entity.query.UserContactQuery;
+import com.easychat.entity.po.UserInfo;
+import com.easychat.entity.query.*;
 import com.easychat.entity.vo.PaginationResultVO;
 import com.easychat.enums.*;
 import com.easychat.exception.BusinessException;
+import com.easychat.mapper.GroupInfoMapper;
 import com.easychat.mapper.UserContactApplyMapper;
 import com.easychat.mapper.UserContactMapper;
+import com.easychat.mapper.UserInfoMapper;
 import com.easychat.redis.RedisComponent;
 import com.easychat.service.UserContactApplyService;
 import com.easychat.service.UserContactService;
+import com.easychat.utils.ArrayUtils;
+import com.easychat.utils.StringTools;
+import com.easychat.websocket.MessageHandler;
 import jakarta.annotation.Resource;
-import org.apache.catalina.User;
-import org.apache.ibatis.builder.BuilderException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -39,6 +43,12 @@ public class UserContactApplyServiceImpl implements UserContactApplyService {
     private RedisComponent redisComponent;
     @Resource
     private UserContactService userContactService;
+    @Resource
+    private MessageHandler messageHandler;
+    @Resource
+    private UserInfoMapper<UserInfo, UserInfoQuery> userInfoMapper;
+    @Resource
+    private GroupInfoMapper<GroupInfo, GroupInfoQuery> groupInfoMapper;
 
 	// 根据条件查询列表
 	public List<UserContactApply> findListByParam(UserContactApplyQuery query) {
@@ -109,6 +119,79 @@ public class UserContactApplyServiceImpl implements UserContactApplyService {
 	public Integer deleteUserContactApplyByApplyUserIdAndReceiveUserIdAndContactId(String applyUserId, String receiveUserId, String contactId) {
 		return this.userContactApplyMapper.deleteByApplyUserIdAndReceiveUserIdAndContactId(applyUserId, receiveUserId, contactId);
 	}
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Integer applyAdd(TokenUserInfoDto tokenUserInfoDto, String contactId, String applyInfo) {
+        UserContactTypeEnum typeEnum = UserContactTypeEnum.getByPrefix(contactId);
+        if (null == typeEnum) {
+            throw new BusinessException(ResponseCodeEnum.CODE_600);
+        }
+
+        String applyUserId = tokenUserInfoDto.getUserId();
+        applyInfo = StringTools.isEmpty(applyInfo) ? String.format(Constants.APPLY_INFO_TEMPLATE, tokenUserInfoDto.getNickName()) : applyInfo;
+        Long curTime = System.currentTimeMillis();
+        Integer joinType = null;
+        String receiveUserId = contactId;
+        UserContact userContact = userContactMapper.selectByUserIdAndContactId(applyUserId, contactId);
+        if (userContact != null && ArrayUtils.contains(new Integer[] {
+                UserContactStatusEnum.BLACKLIST.getStatus(),
+                UserContactStatusEnum.BLACKLIST_BE_FIRST.getStatus()
+        }, userContact.getStatus())
+        )
+        {
+            throw new BusinessException("对方已将你拉黑！");
+        }
+
+        if (UserContactTypeEnum.GROUP == typeEnum) {
+            GroupInfo groupInfo = groupInfoMapper.selectByGroupId(contactId);
+            if (groupInfo == null || GroupStatusEnum.DISSOLUTION.getStatus().byteValue() == groupInfo.getStatus()) {
+                throw new BusinessException("该群不存在或已解散！");
+            }
+            receiveUserId = groupInfo.getGroupOwnerId();
+            joinType = Integer.valueOf(groupInfo.getJoinType());
+        } else {
+            UserInfo userInfo = userInfoMapper.selectByUserId(contactId);
+            if (userInfo == null) {
+                throw new BusinessException(ResponseCodeEnum.CODE_600);
+            }
+            joinType = Integer.valueOf(userInfo.getJoinType());
+        }
+
+        if (JoinTypeEnum.JOIN.getType() == joinType) {
+            userContactService.addContact(applyUserId, receiveUserId, contactId, typeEnum.getType(), applyInfo);
+            return joinType;
+        }
+
+        UserContactApply dbApply = this.userContactApplyMapper.selectByApplyUserIdAndReceiveUserIdAndContactId(applyUserId, receiveUserId, contactId);
+        if (dbApply == null) {
+            UserContactApply contactApply = new UserContactApply();
+            contactApply.setApplyUserId(applyUserId);
+            contactApply.setContactType(typeEnum.getType().byteValue());
+            contactApply.setContactId(contactId);
+            contactApply.setReceiveUserId(receiveUserId);
+            contactApply.setLastApplyTime(curTime);
+            contactApply.setStatus(UserContactApplyStatusEnum.INIT.getStatus().byteValue());
+            contactApply.setApplyInfo(applyInfo);
+            this.userContactApplyMapper.insert(contactApply);
+        } else {
+            UserContactApply contactApply = new UserContactApply();
+            contactApply.setStatus(UserContactApplyStatusEnum.INIT.getStatus().byteValue());
+            contactApply.setLastApplyTime(curTime);
+            contactApply.setApplyInfo(applyInfo);
+            this.userContactApplyMapper.updateByApplyId(contactApply, dbApply.getApplyId());
+        }
+
+        if (dbApply == null || !(UserContactApplyStatusEnum.INIT.getStatus().byteValue() == dbApply.getStatus())) {
+            MessageSendDto messageSendDto = new MessageSendDto();
+            messageSendDto.setMessageType(MessageTypeEnum.CONTACT_APPLY.getType());
+            messageSendDto.setMessageContent(applyInfo);
+            messageSendDto.setContactId(receiveUserId);
+            messageHandler.sendMessage(messageSendDto);
+        }
+
+        return joinType;
+    }
 
     @Override
     @Transactional(rollbackFor = Exception.class)

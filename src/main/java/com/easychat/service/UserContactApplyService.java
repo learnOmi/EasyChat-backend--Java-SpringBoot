@@ -1,5 +1,6 @@
 package com.easychat.service;
 
+import com.easychat.entity.dto.TokenUserInfoDto;
 import com.easychat.entity.po.UserContactApply;
 import com.easychat.entity.query.UserContactApplyQuery;
 import com.easychat.entity.vo.PaginationResultVO;
@@ -46,6 +47,8 @@ public interface UserContactApplyService {
 
 	// 根据ApplyUserIdAndReceiveUserIdAndContactId删除
 	Integer deleteUserContactApplyByApplyUserIdAndReceiveUserIdAndContactId(String applyUserId, String receiveUserId, String contactId);
+
+    Integer applyAdd(TokenUserInfoDto tokenUserInfoDto, String contactId, String applyInfo);
 
     void dealWithApply(String userId, Integer applyId, Integer status);
 

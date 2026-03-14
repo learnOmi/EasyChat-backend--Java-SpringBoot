@@ -5,6 +5,7 @@ import com.easychat.entity.dto.SysSettingDto;
 import com.easychat.entity.dto.TokenUserInfoDto;
 import io.netty.channel.Channel;
 import jakarta.annotation.Resource;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -34,6 +35,13 @@ public class RedisComponent {
     public TokenUserInfoDto getTokenUserInfoDto(String token) {
         TokenUserInfoDto tokenUserInfoDto = (TokenUserInfoDto) redisUtils.get(Constants.REDIS_KEY_WS_TOKEN + token);
         return tokenUserInfoDto;
+    }
+
+    public void cleanUserTokenByUserId(String userId){
+        String token = (String) redisUtils.get(Constants.REDIS_KEY_WS_TOKEN_USERID + userId);
+        if (!StringUtils.isEmpty(token)){
+            redisUtils.delete(Constants.REDIS_KEY_WS_TOKEN + token);
+        }
     }
 
     public SysSettingDto getSysSetting() {

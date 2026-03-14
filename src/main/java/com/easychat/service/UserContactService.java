@@ -50,8 +50,6 @@ public interface UserContactService {
 
     UserContactSearchResultDto searchContact(String userId, String contactId);
 
-    Integer applyAdd(TokenUserInfoDto tokenUserInfoDto, String contactId, String applyInfo);
-
     void addContact(String applyUserId, String receiveUserId, String contactId, Integer contactType, String applyInfo);
 
     void addContactRobot(String userId);

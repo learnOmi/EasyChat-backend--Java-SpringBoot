@@ -141,16 +141,56 @@ public class ChannelContextUtils {
         channel.writeAndFlush(new TextWebSocketFrame(JsonUtils.convertObj2Json(messageSendDto)));
     }
 
-    private void add2Group(String groupId, Channel channel) {
-        if (channel == null) {
+    public void sendMessage(MessageSendDto messageSendDto) {
+        UserContactTypeEnum contactTypeEnum = UserContactTypeEnum.getByPrefix(messageSendDto.getContactId());
+        switch (contactTypeEnum) {
+            case USER:
+                send2User(messageSendDto);
+                break;
+            case GROUP:
+                send2Group(messageSendDto);
+                break;
+        }
+    }
+
+    private void send2User(MessageSendDto messageSendDto) {
+        String contactId = messageSendDto.getContactId();
+        if (StringTools.isEmpty(contactId)) return;
+        sendMsg(messageSendDto, contactId);
+        // 强制下线
+        if (MessageTypeEnum.FORCE_OFF_LINE.getType().equals(messageSendDto.getMessageType())) {
+            closeContext(contactId);
+        }
+    }
+
+    private void send2Group(MessageSendDto messageSendDto) {
+        if (StringTools.isEmpty(messageSendDto.getContactId())) {
             return;
         }
+        ChannelGroup group = GROUP_CONTEXT_MAP.get(messageSendDto.getContactId());
+        if (group != null) {
+            group.writeAndFlush(new TextWebSocketFrame(JsonUtils.convertObj2Json(messageSendDto)));
+        }
+    }
+
+    private void add2Group(String groupId, Channel channel) {
         ChannelGroup group = GROUP_CONTEXT_MAP.get(groupId);
         if (group == null) {
             group = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
             GROUP_CONTEXT_MAP.put(groupId, group);
         }
         group.add(channel);
+    }
+
+    public void closeContext(String userId){
+        if (StringTools.isEmpty(userId)) {
+            return;
+        }
+        redisComponent.cleanUserTokenByUserId(userId);
+        Channel channel = USER_CONTEXT_MAP.get(userId);
+        if (channel != null) {
+            channel.close();
+        }
     }
 
     public void removeContext(Channel channel) {

@@ -1,9 +1,6 @@
 package com.easychat.service.impl;
 
-import com.easychat.entity.constants.Constants;
-import com.easychat.entity.dto.MessageSendDto;
 import com.easychat.entity.dto.SysSettingDto;
-import com.easychat.entity.dto.TokenUserInfoDto;
 import com.easychat.entity.dto.UserContactSearchResultDto;
 import com.easychat.entity.po.*;
 import com.easychat.entity.query.*;
@@ -13,10 +10,8 @@ import com.easychat.exception.BusinessException;
 import com.easychat.mapper.*;
 import com.easychat.redis.RedisComponent;
 import com.easychat.service.UserContactService;
-import com.easychat.utils.ArrayUtils;
 import com.easychat.utils.CopyTools;
 import com.easychat.utils.StringTools;
-import com.easychat.websocket.ChannelContextUtils;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,11 +40,7 @@ public class UserContactServiceImpl implements UserContactService {
     @Resource
     private ChatMessageMapper<ChatMessage, ChatMessageQuery> chatMessageMapper;
     @Resource
-    private UserContactApplyMapper<UserContactApply, UserContactApplyQuery> userContactApplyMapper;
-    @Resource
     private RedisComponent redisComponent;
-    @Resource
-    private ChannelContextUtils channelContextUtils;
 
 	// 根据条件查询列表
 	public List<UserContact> findListByParam(UserContactQuery query) {
@@ -150,77 +141,6 @@ public class UserContactServiceImpl implements UserContactService {
         UserContact userContact = this.userContactMapper.selectByUserIdAndContactId(userId, contactId);
         resultDto.setStatus(Integer.valueOf(userContact == null ? null : userContact.getStatus()));
         return resultDto;
-    }
-
-    @Transactional(rollbackFor = Exception.class)
-    public Integer applyAdd(TokenUserInfoDto tokenUserInfoDto, String contactId, String applyInfo) {
-        UserContactTypeEnum typeEnum = UserContactTypeEnum.getByPrefix(contactId);
-        if (null == typeEnum) {
-            throw new BusinessException(ResponseCodeEnum.CODE_600);
-        }
-
-        String applyUserId = tokenUserInfoDto.getUserId();
-        applyInfo = StringTools.isEmpty(applyInfo) ? String.format(Constants.APPLY_INFO_TEMPLATE, tokenUserInfoDto.getNickName()) : applyInfo;
-        Long curTime = System.currentTimeMillis();
-        Integer joinType = null;
-        String receiveUserId = contactId;
-        UserContact userContact = userContactMapper.selectByUserIdAndContactId(applyUserId, contactId);
-        if (userContact != null && ArrayUtils.contains(new Integer[] {
-                    UserContactStatusEnum.BLACKLIST.getStatus(),
-                    UserContactStatusEnum.BLACKLIST_BE_FIRST.getStatus()
-                }, userContact.getStatus())
-            )
-        {
-            throw new BusinessException("对方已将你拉黑！");
-        }
-
-        if (UserContactTypeEnum.GROUP == typeEnum) {
-            GroupInfo groupInfo = groupInfoMapper.selectByGroupId(contactId);
-            if (groupInfo == null || GroupStatusEnum.DISSOLUTION.getStatus().byteValue() == groupInfo.getStatus()) {
-                throw new BusinessException("该群不存在或已解散！");
-            }
-            receiveUserId = groupInfo.getGroupOwnerId();
-            joinType = Integer.valueOf(groupInfo.getJoinType());
-        } else {
-            UserInfo userInfo = userInfoMapper.selectByUserId(contactId);
-            if (userInfo == null) {
-                throw new BusinessException(ResponseCodeEnum.CODE_600);
-            }
-            joinType = Integer.valueOf(userInfo.getJoinType());
-        }
-
-        if (JoinTypeEnum.JOIN.getType() == joinType) {
-            this.addContact(applyUserId, receiveUserId, contactId, typeEnum.getType(), applyInfo);
-            return joinType;
-        }
-
-        UserContactApply dbApply = this.userContactApplyMapper.selectByApplyUserIdAndReceiveUserIdAndContactId(applyUserId, receiveUserId, contactId);
-        if (dbApply != null) {
-            UserContactApply contactApply = new UserContactApply();
-            contactApply.setApplyUserId(applyUserId);
-            contactApply.setContactType(typeEnum.getType().byteValue());
-            contactApply.setContactId(contactId);
-            contactApply.setReceiveUserId(receiveUserId);
-            contactApply.setLastApplyTime(curTime);
-            contactApply.setStatus(UserContactApplyStatusEnum.INIT.getStatus().byteValue());
-            contactApply.setApplyInfo(applyInfo);
-            this.userContactApplyMapper.insert(contactApply);
-        } else {
-            UserContactApply contactApply = new UserContactApply();
-            contactApply.setStatus(UserContactApplyStatusEnum.INIT.getStatus().byteValue());
-            contactApply.setLastApplyTime(curTime);
-            contactApply.setApplyInfo(applyInfo);
-            this.userContactApplyMapper.updateByApplyId(contactApply, dbApply.getApplyId());
-        }
-
-        if (dbApply == null || !(UserContactApplyStatusEnum.INIT.getStatus().byteValue() == dbApply.getStatus())) {
-            MessageSendDto messageSendDto = new MessageSendDto();
-            messageSendDto.setMessageType(MessageTypeEnum.CONTACT_APPLY.getType());
-            messageSendDto.setMessageContent(applyInfo);
-            messageSendDto.setContactId(receiveUserId);
-        }
-
-        return joinType;
     }
 
     @Override
