@@ -15,6 +15,7 @@ import com.easychat.enums.MessageTypeEnum;
 import com.easychat.enums.UserContactApplyStatusEnum;
 import com.easychat.enums.UserContactTypeEnum;
 import com.easychat.mapper.ChatMessageMapper;
+import com.easychat.mapper.ChatSessionUserMapper;
 import com.easychat.mapper.UserContactApplyMapper;
 import com.easychat.mapper.UserInfoMapper;
 import com.easychat.redis.RedisComponent;
@@ -55,7 +56,7 @@ public class ChannelContextUtils {
     @Resource
     private UserInfoMapper<UserInfo, UserInfoQuery> userInfoMapper;
     @Resource
-    private ChatSessionUserService chatSessionUserService;
+    private ChatSessionUserMapper<ChatSessionUser, ChatSessionUserQuery> chatSessionUserMapper;
     @Resource
     private ChatMessageMapper<ChatMessage, ChatMessageQuery> chatMessageMapper;
     @Resource
@@ -109,7 +110,7 @@ public class ChannelContextUtils {
         ChatSessionUserQuery sessionUserQuery = new ChatSessionUserQuery();
         sessionUserQuery.setUserId(userId);
         sessionUserQuery.setOrderBy("last_receive_time desc");
-        List<ChatSessionUser> chatSessionUserList = chatSessionUserService.findListByParam(sessionUserQuery);
+        List<ChatSessionUser> chatSessionUserList = chatSessionUserMapper.selectList(sessionUserQuery);
 
         WsInitData wsInitData = new WsInitData();
         wsInitData.setChatSessionList(chatSessionUserList);

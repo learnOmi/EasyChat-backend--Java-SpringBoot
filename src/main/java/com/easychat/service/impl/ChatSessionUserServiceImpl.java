@@ -1,13 +1,22 @@
 package com.easychat.service.impl;
 
+import com.easychat.entity.dto.MessageSendDto;
 import com.easychat.entity.po.ChatSessionUser;
+import com.easychat.entity.po.UserContact;
 import com.easychat.entity.query.ChatSessionUserQuery;
 import com.easychat.entity.query.SimplePage;
+import com.easychat.entity.query.UserContactQuery;
 import com.easychat.entity.vo.PaginationResultVO;
+import com.easychat.enums.MessageTypeEnum;
 import com.easychat.enums.PageSize;
+import com.easychat.enums.UserContactStatusEnum;
+import com.easychat.enums.UserContactTypeEnum;
 import com.easychat.mapper.ChatSessionUserMapper;
+import com.easychat.mapper.UserContactMapper;
 import com.easychat.service.ChatSessionUserService;
+import com.easychat.websocket.MessageHandler;
 import jakarta.annotation.Resource;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -21,8 +30,12 @@ import java.util.List;
 public class ChatSessionUserServiceImpl implements ChatSessionUserService {
 	@Resource
 	private ChatSessionUserMapper<ChatSessionUser, ChatSessionUserQuery> chatSessionUserMapper;
+    @Resource
+    private MessageHandler messageHandler;
+    @Autowired
+    private UserContactMapper userContactMapper;
 
-	// 根据条件查询列表
+    // 根据条件查询列表
 	public List<ChatSessionUser> findListByParam(ChatSessionUserQuery query) {
 		return this.chatSessionUserMapper.selectList(query);
 	}
@@ -87,4 +100,39 @@ public class ChatSessionUserServiceImpl implements ChatSessionUserService {
 	public Integer deleteChatSessionUserByUserIdAndContactId(String userId, String contactId) {
 		return this.chatSessionUserMapper.deleteByUserIdAndContactId(userId, contactId);
 	}
+
+    @Override
+    public void updateRedundantInfo(String contactName, String contactId) {
+        ChatSessionUser updateInfo = new ChatSessionUser();
+        updateInfo.setContactName(contactName);
+        ChatSessionUserQuery chatSessionUserQuery = new ChatSessionUserQuery();
+        chatSessionUserQuery.setContactId(contactId);
+        this.chatSessionUserMapper.updateByParam(updateInfo, chatSessionUserQuery);
+
+        UserContactTypeEnum userContactTypeEnum = UserContactTypeEnum.getByPrefix(contactId);
+        if (userContactTypeEnum == UserContactTypeEnum.GROUP) {
+            MessageSendDto messageSendDto = new MessageSendDto();
+            messageSendDto.setContactType(userContactTypeEnum.getType());
+            messageSendDto.setContactId(contactId);
+            messageSendDto.setExtendData(contactName);
+            messageSendDto.setMessageType(MessageTypeEnum.CONTACT_NAME_UPDATE.getType());
+            messageHandler.sendMessage(messageSendDto);
+        } else {
+            UserContactQuery userContactQuery = new UserContactQuery();
+            userContactQuery.setContactType(UserContactTypeEnum.USER.getType().byteValue());
+            userContactQuery.setContactId(contactId);
+            userContactQuery.setStatus(UserContactStatusEnum.FRIEND.getStatus().byteValue());
+            List<UserContact> userContactList = userContactMapper.selectList(userContactQuery);
+            for (UserContact userContact : userContactList) {
+                MessageSendDto messageSendDto = new MessageSendDto();
+                messageSendDto.setContactType(userContactTypeEnum.getType());
+                messageSendDto.setContactId(userContact.getContactId());
+                messageSendDto.setExtendData(contactName);
+                messageSendDto.setMessageType(MessageTypeEnum.CONTACT_NAME_UPDATE.getType());
+                messageSendDto.setSenderId(contactId);
+                messageSendDto.setSenderNickName(contactName);
+                messageHandler.sendMessage(messageSendDto);
+            }
+        }
+    }
 }

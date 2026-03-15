@@ -11,7 +11,7 @@ public enum MessageTypeEnum {
     FORCE_OFF_LINE(7, "", "强制下线"),
     DISSOLUTION_GROUP(8, "群聊已解散", "解散群聊"),
     ADD_GROUP(9, "%s加入了群组", "加入群聊"),
-    GROUP_NAME_UPDATE(10, "", "更新群昵称"),
+    CONTACT_NAME_UPDATE(10, "", "更新群昵称"),
     LEAVE_GROUP(11, "%s离开了群组", "退出群聊"),
     REMOVE_GROUP(12, "%s被移出群组", "移出群聊"),
     ADD_FRIEND_SELF(13, "", "添加好友打招呼消息");

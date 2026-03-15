@@ -44,4 +44,6 @@ public interface ChatSessionUserService {
 
 	// 根据UserIdAndContactId删除
 	Integer deleteChatSessionUserByUserIdAndContactId(String userId, String contactId);
+
+    public void updateRedundantInfo(String contactName, String contactId);
 }

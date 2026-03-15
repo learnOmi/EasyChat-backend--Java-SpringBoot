@@ -37,6 +37,11 @@ public class RedisComponent {
         return tokenUserInfoDto;
     }
 
+    public TokenUserInfoDto getTokenUserInfoDtoByUserId(String userId) {
+        String token = (String) redisUtils.get(Constants.REDIS_KEY_WS_TOKEN_USERID + userId);
+        return getTokenUserInfoDto(token);
+    }
+
     public void cleanUserTokenByUserId(String userId){
         String token = (String) redisUtils.get(Constants.REDIS_KEY_WS_TOKEN_USERID + userId);
         if (!StringUtils.isEmpty(token)){

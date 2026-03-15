@@ -11,6 +11,7 @@ import com.easychat.enums.*;
 import com.easychat.exception.BusinessException;
 import com.easychat.mapper.*;
 import com.easychat.redis.RedisComponent;
+import com.easychat.service.ChatSessionUserService;
 import com.easychat.service.GroupInfoService;
 import com.easychat.utils.CopyTools;
 import com.easychat.utils.StringTools;
@@ -46,6 +47,8 @@ public class GroupInfoServiceImpl implements GroupInfoService {
     private ChatSessionMapper<ChatSession, ChatSessionQuery> chatSessionMapper;
     @Resource
     private ChatSessionUserMapper<ChatSessionUser, ChatSessionUserQuery> chatSessionUserMapper;
+    @Resource
+    private ChatSessionUserService chatSessionUserService;
     @Resource
     private ChatMessageMapper<ChatMessage, ChatMessageQuery> chatMessageMapper;
     @Resource
@@ -186,6 +189,14 @@ public class GroupInfoServiceImpl implements GroupInfoService {
                 throw new BusinessException(ResponseCodeEnum.CODE_600);
             }
             this.groupInfoMapper.updateByGroupId(groupInfo, groupInfo.getGroupId());
+
+            String contactNameUpdate = null;
+            if (!dbInfo.getGroupName().equals(groupInfo.getGroupName())) {
+                contactNameUpdate = groupInfo.getGroupName();
+            }
+            if (contactNameUpdate == null) return;
+
+            chatSessionUserService.updateRedundantInfo(contactNameUpdate, groupInfo.getGroupId());
         }
         String baseFolder = appConfig.getProjectFolder() + Constants.FILE_FOLDER_FILE;
         File targetFileFolder = new File(baseFolder + Constants.FILE_FOLDER_AVATAR);

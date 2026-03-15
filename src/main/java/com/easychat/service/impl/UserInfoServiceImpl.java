@@ -54,6 +54,8 @@ public class UserInfoServiceImpl implements UserInfoService {
     private AppConfig appConfig;
     @Resource
     private RedisComponent redisComponent;
+    @Autowired
+    private ChatSessionUserServiceImpl chatSessionUserService;
 
     // 根据条件查询列表
     public List<UserInfo> findListByParam(UserInfoQuery query) {
@@ -280,11 +282,17 @@ public class UserInfoServiceImpl implements UserInfoService {
         UserInfo dbInfo = this.userInfoMapper.selectByUserId(userInfo.getUserId());
         this.userInfoMapper.updateByUserId(userInfo, userInfo.getUserId());
         String contactNameUpdate = null;
-        if (dbInfo.getNickName().equals(userInfo.getNickName())) {
+        if (!dbInfo.getNickName().equals(userInfo.getNickName())) {
             contactNameUpdate = userInfo.getNickName();
         }
+        if (contactNameUpdate == null) return;
 
-        //TODO 更新会话信息中的昵称信息
+        // 更新token
+        TokenUserInfoDto tokenUserInfoDto = redisComponent.getTokenUserInfoDtoByUserId(userInfo.getUserId());
+        tokenUserInfoDto.setNickName(contactNameUpdate);
+        redisComponent.saveTokenUserInfoDto(tokenUserInfoDto);
+
+        chatSessionUserService.updateRedundantInfo(contactNameUpdate, userInfo.getUserId());
     }
 
     @Override
