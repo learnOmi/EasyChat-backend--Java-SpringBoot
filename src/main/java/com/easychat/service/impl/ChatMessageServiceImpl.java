@@ -1,12 +1,25 @@
 package com.easychat.service.impl;
 
+import com.easychat.entity.constants.Constants;
+import com.easychat.entity.dto.MessageSendDto;
+import com.easychat.entity.dto.SysSettingDto;
+import com.easychat.entity.dto.TokenUserInfoDto;
 import com.easychat.entity.po.ChatMessage;
+import com.easychat.entity.po.ChatSession;
 import com.easychat.entity.query.ChatMessageQuery;
+import com.easychat.entity.query.ChatSessionQuery;
 import com.easychat.entity.query.SimplePage;
 import com.easychat.entity.vo.PaginationResultVO;
-import com.easychat.enums.PageSize;
+import com.easychat.enums.*;
+import com.easychat.exception.BusinessException;
 import com.easychat.mapper.ChatMessageMapper;
+import com.easychat.mapper.ChatSessionMapper;
+import com.easychat.redis.RedisComponent;
 import com.easychat.service.ChatMessageService;
+import com.easychat.utils.ArrayUtils;
+import com.easychat.utils.CopyTools;
+import com.easychat.utils.StringTools;
+import com.easychat.websocket.MessageHandler;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
 
@@ -21,6 +34,12 @@ import java.util.List;
 public class ChatMessageServiceImpl implements ChatMessageService {
 	@Resource
 	private ChatMessageMapper<ChatMessage, ChatMessageQuery> chatMessageMapper;
+    @Resource
+    private ChatSessionMapper<ChatSession, ChatSessionQuery> chatSessionMapper;
+    @Resource
+    private RedisComponent redisComponent;
+    @Resource
+    private MessageHandler messageHandler;
 
 	// 根据条件查询列表
 	public List<ChatMessage> findListByParam(ChatMessageQuery query) {
@@ -87,4 +106,73 @@ public class ChatMessageServiceImpl implements ChatMessageService {
 	public Integer deleteChatMessageByMessageId(Long messageId) {
 		return this.chatMessageMapper.deleteByMessageId(messageId);
 	}
+
+    @Override
+    public MessageSendDto saveMessage(ChatMessage chatMessage, TokenUserInfoDto tokenUserInfoDto) {
+        if (!Constants.ROBOT_UID.equals(tokenUserInfoDto.getUserId())) {
+            List<String> contactList = redisComponent.getUserContactList(tokenUserInfoDto.getUserId());
+            if (!contactList.contains(chatMessage.getContactId())) {
+                UserContactTypeEnum userContactTypeEnum = UserContactTypeEnum.getByPrefix(chatMessage.getContactId());
+                if (userContactTypeEnum == UserContactTypeEnum.USER) {
+                    throw new BusinessException(ResponseCodeEnum.CODE_902);
+                } else {
+                    throw new BusinessException(ResponseCodeEnum.CODE_903);
+                }
+            }
+        }
+
+        String sessionId = null;
+        String sendUserId = tokenUserInfoDto.getUserId();
+        String contactId = chatMessage.getContactId();
+        UserContactTypeEnum contactTypeEnum = UserContactTypeEnum.getByPrefix(contactId);
+        if (UserContactTypeEnum.USER == contactTypeEnum) {
+            sessionId = StringTools.getChatSessionId4User(new String[]{sendUserId, contactId});
+        } else {
+            sessionId = StringTools.getChatSessionId4Group(contactId);
+        }
+        chatMessage.setSessionId(sessionId);
+
+        Long curTime = System.currentTimeMillis();
+        chatMessage.setSendTime(curTime);
+
+        MessageTypeEnum messageTypeEnum = MessageTypeEnum.getByType(chatMessage.getMessageType().intValue());
+        if (null == messageTypeEnum || !ArrayUtils.contains(new Integer[]{MessageTypeEnum.CHAT.getType(), MessageTypeEnum.MEDIA_CHAT.getType()}, chatMessage.getMessageType())) {
+            throw  new BusinessException(ResponseCodeEnum.CODE_600);
+        }
+        Integer status = MessageTypeEnum.MEDIA_CHAT == messageTypeEnum ? MessageStatusEnum.SENDING.getStatus() : MessageStatusEnum.SENDED.getStatus();
+        chatMessage.setStatus(status.byteValue());
+
+        String messageContent = StringTools.cleanHtmlTag(chatMessage.getMessageContent());
+        chatMessage.setMessageContent(messageContent);
+
+        ChatSession chatSession = new ChatSession();
+        chatSession.setLastMessage(messageContent);
+        if (UserContactTypeEnum.GROUP == contactTypeEnum) {
+            chatSession.setLastMessage(tokenUserInfoDto.getNickName() + ": " + messageContent);
+        }
+        chatSession.setLastReceiveTime(curTime);
+        chatSessionMapper.updateBySessionId(chatSession, sessionId);
+
+        chatMessage.setSendUserId(sendUserId);
+        chatMessage.setSendUserNickName(tokenUserInfoDto.getNickName());
+        chatMessage.setContactType(contactTypeEnum.getType().byteValue());
+        chatMessageMapper.insert(chatMessage);
+        MessageSendDto messageSendDto = CopyTools.copy(chatMessage, MessageSendDto.class);
+
+        if (Constants.ROBOT_UID.equals(contactId)) {
+            SysSettingDto sysSettingDto = redisComponent.getSysSetting();
+            TokenUserInfoDto robot = new TokenUserInfoDto();
+            robot.setUserId(sysSettingDto.getRobotUid());
+            robot.setNickName(sysSettingDto.getRobotNickName());
+            ChatMessage robotChatMessage = new ChatMessage();
+            robotChatMessage.setContactId(sendUserId);
+            robotChatMessage.setMessageContent("你好，我是机器人，您可以在未來接入大模型~");
+            robotChatMessage.setMessageType(MessageTypeEnum.CHAT.getType().byteValue());
+            saveMessage(robotChatMessage, robot);
+        } else {
+            messageHandler.sendMessage(messageSendDto);
+        }
+
+        return messageSendDto;
+    }
 }

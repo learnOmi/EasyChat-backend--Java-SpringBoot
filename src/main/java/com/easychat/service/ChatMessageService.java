@@ -1,5 +1,7 @@
 package com.easychat.service;
 
+import com.easychat.entity.dto.MessageSendDto;
+import com.easychat.entity.dto.TokenUserInfoDto;
 import com.easychat.entity.po.ChatMessage;
 import com.easychat.entity.query.ChatMessageQuery;
 import com.easychat.entity.vo.PaginationResultVO;
@@ -44,4 +46,6 @@ public interface ChatMessageService {
 
 	// 根据MessageId删除
 	Integer deleteChatMessageByMessageId(Long messageId);
+
+    MessageSendDto saveMessage(ChatMessage chatMessage, TokenUserInfoDto tokenUserInfoDto);
 }
