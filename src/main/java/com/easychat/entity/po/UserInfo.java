@@ -2,6 +2,8 @@ package com.easychat.entity.po;
 
 import java.io.Serializable;
 import java.util.Date;
+
+import com.easychat.entity.constants.Constants;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import org.springframework.format.annotation.DateTimeFormat;
 import com.easychat.utils.DateUtils;
@@ -45,7 +47,21 @@ public class UserInfo implements Serializable {
 	// 最后离开时间
 	private Long lastOffTime;
 
-	public void setUserId(String userId) {
+    private Integer onlineType;
+
+    public Integer getOnlineType() {
+        if (lastLoginTime != null && lastLoginTime.getTime() > lastOffTime){
+            return Constants.ONE;
+        } else {
+            return Constants.ZERO;
+        }
+    }
+
+    public void setOnlineType(Integer onlineType) {
+        this.onlineType = onlineType;
+    }
+
+    public void setUserId(String userId) {
 		this.userId = userId;
 	}
 
