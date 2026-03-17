@@ -1,8 +1,10 @@
 package com.easychat.service;
 
+import com.easychat.entity.dto.TokenUserInfoDto;
 import com.easychat.entity.po.GroupInfo;
 import com.easychat.entity.query.GroupInfoQuery;
 import com.easychat.entity.vo.PaginationResultVO;
+import com.easychat.enums.MessageTypeEnum;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -44,4 +46,8 @@ public interface GroupInfoService {
     void saveGroup(GroupInfo groupInfo, MultipartFile avatarFile, MultipartFile avatarCover) throws IOException;
 
     void dissolutionGroup(String groupOwnerId, String groupId);
+
+    void addOrRemoveGroupUser(TokenUserInfoDto tokenUserInfoDto, String groupId, String contactIds, Integer opType);
+
+    void leaveGroup(String userId, String groupId, MessageTypeEnum messageTypeEnum);
 }

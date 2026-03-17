@@ -79,7 +79,7 @@ public class RedisUtils<V> {
             }
             return true;
         } catch (Exception e) {
-            logger.error("设置redisKey:{}, value:{}失败", key, value);
+            logger.error("获取redisKey:{}, value:{}失败", key, value);
             return false;
         }
     }
@@ -92,19 +92,18 @@ public class RedisUtils<V> {
             }
             return true;
         } catch (Exception e) {
-            logger.error("设置redisKey:, value:失败", key, list);
+            logger.error("设置redisKey{}失败, value:{}", key, list);
             return false;
         }
     }
 
-    public long remove(String key, Objects value) {
+    public long remove(String key, Object value) {
         try {
             Long remove = redisTemplate.opsForList().remove(key, 0, value);
             return remove;
         } catch (Exception e) {
-            logger.error("设置redisKey:{}, value:{}失败", key, value);
+            logger.error("删除rediskey{}失败, value:{}失败", key, value);
             return 0;
         }
     }
-
 }

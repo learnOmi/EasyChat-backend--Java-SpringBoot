@@ -2,6 +2,7 @@ package com.easychat.service.impl;
 
 import com.easychat.entity.config.AppConfig;
 import com.easychat.entity.constants.Constants;
+import com.easychat.entity.dto.MessageSendDto;
 import com.easychat.entity.dto.TokenUserInfoDto;
 import com.easychat.entity.po.UserContact;
 import com.easychat.entity.po.UserInfoBeauty;
@@ -21,6 +22,7 @@ import com.easychat.service.UserContactService;
 import com.easychat.service.UserInfoService;
 import com.easychat.utils.CopyTools;
 import com.easychat.utils.StringTools;
+import com.easychat.websocket.MessageHandler;
 import org.apache.commons.lang3.ArrayUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -54,8 +56,10 @@ public class UserInfoServiceImpl implements UserInfoService {
     private AppConfig appConfig;
     @Resource
     private RedisComponent redisComponent;
-    @Autowired
+    @Resource
     private ChatSessionUserServiceImpl chatSessionUserService;
+    @Resource
+    private MessageHandler messageHandler;
 
     // 根据条件查询列表
     public List<UserInfo> findListByParam(UserInfoQuery query) {
@@ -309,6 +313,10 @@ public class UserInfoServiceImpl implements UserInfoService {
 
     @Override
     public void forceOffLine(String userId) {
-        //TODO 强制下线
+        MessageSendDto sendDto = new MessageSendDto();
+        sendDto.setContactType(UserContactTypeEnum.USER.getType());
+        sendDto.setMessageType(MessageTypeEnum.FORCE_OFF_LINE.getType());
+        sendDto.setContactId(userId);
+        messageHandler.sendMessage(sendDto);
     }
 }

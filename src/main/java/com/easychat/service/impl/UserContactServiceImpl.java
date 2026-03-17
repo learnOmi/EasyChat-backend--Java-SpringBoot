@@ -255,7 +255,7 @@ public class UserContactServiceImpl implements UserContactService {
             GroupInfo groupInfo = this.groupInfoMapper.selectByGroupId(contactId);
             chatSessionUser.setContactName(groupInfo.getGroupName());
             chatSessionUser.setSessionId(sessionId);
-            this.chatSessionUserMapper.insert(chatSessionUser);
+            this.chatSessionUserMapper.insertOrUpdate(chatSessionUser);
 
             UserInfo applyUser = this.userInfoMapper.selectByUserId(applyUserId);
             String sendMessage = String.format(MessageTypeEnum.ADD_GROUP.getInitMessage(), applyUser.getNickName());
@@ -305,6 +305,8 @@ public class UserContactServiceImpl implements UserContactService {
         }
         userContactMapper.updateByUserIdAndContactId(friendContact, contactId, userId);
 
+        redisComponent.removeUserContact(userId, contactId);
+        redisComponent.removeUserContact(contactId, userId);
     }
 
     @Override

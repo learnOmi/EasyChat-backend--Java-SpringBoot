@@ -9,6 +9,7 @@ import com.easychat.entity.query.UserContactQuery;
 import com.easychat.entity.vo.GroupInfoVO;
 import com.easychat.entity.vo.ResponseVO;
 import com.easychat.enums.GroupStatusEnum;
+import com.easychat.enums.MessageTypeEnum;
 import com.easychat.enums.UserContactStatusEnum;
 import com.easychat.exception.BusinessException;
 import com.easychat.service.GroupInfoService;
@@ -111,4 +112,30 @@ public class GroupInfoController extends ABaseController {
         return getSuccessResponse(groupInfoVO);
     }
 
+    @RequestMapping("/addOrRemoveGroupUser")
+    @GlobalInterceptor
+    public ResponseVO addOrRemoveGroupUser(HttpServletRequest request,
+                                           @NotEmpty String groupId,
+                                           @NotEmpty String selectContacts,
+                                           @NotNull Integer opType) {
+        TokenUserInfoDto tokenUserInfoDto = getTokenUserInfoDto(request);
+        this.groupInfoService.addOrRemoveGroupUser(tokenUserInfoDto, groupId, selectContacts, opType);
+        return getSuccessResponse(null);
+    }
+
+    @RequestMapping("/leaveGroup")
+    @GlobalInterceptor
+    public ResponseVO leaveGroup(HttpServletRequest request, @NotEmpty String groupId) {
+        TokenUserInfoDto tokenUserInfoDto = getTokenUserInfoDto(request);
+        groupInfoService.leaveGroup(tokenUserInfoDto.getUserId(), groupId, MessageTypeEnum.LEAVE_GROUP);
+        return getSuccessResponse(null);
+    }
+
+    @RequestMapping("/dissolutionGroup")
+    @GlobalInterceptor
+    public ResponseVO dissolutionGroup(HttpServletRequest request, @NotEmpty String groupId) {
+        TokenUserInfoDto tokenUserInfoDto = getTokenUserInfoDto(request);
+        groupInfoService.dissolutionGroup(tokenUserInfoDto.getUserId(), groupId);
+        return getSuccessResponse(null);
+    }
 }

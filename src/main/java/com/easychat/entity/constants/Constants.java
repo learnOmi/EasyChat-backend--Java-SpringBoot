@@ -37,4 +37,7 @@ public class Constants {
     public static final String APP_NAME = "EasyChat";
 
     public static final Long MILLLSSECONDS_3DAY = 3 * 24 * 60 * 60 * 1000L;
+
+    public static final Integer ZERO = 0;
+    public static final Integer ONE = 1;
 }

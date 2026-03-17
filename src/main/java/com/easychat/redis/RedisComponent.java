@@ -78,4 +78,8 @@ public class RedisComponent {
     public List<String> getUserContactList(String userId) {
         return (List<String>)redisUtils.getQueueList(Constants.REDIS_KEY_USER_CONTACT + userId);
     }
+
+    public void removeUserContact(String userId, String contactId) {
+        redisUtils.remove(Constants.REDIS_KEY_USER_CONTACT + userId, contactId);
+    }
 }
