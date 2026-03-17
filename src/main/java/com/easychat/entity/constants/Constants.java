@@ -21,9 +21,12 @@ public class Constants {
 
     public static final String FILE_FOLDER_FILE = "/file/";
     public static final String FILE_FOLDER_AVATAR = "/avatar/";
+    public static final Long FILE_SIZE_MB = 1024 * 1024L;
 
     public static final String IMAGE_SUFFIX = ".png";
     public static final String COVER_IMAGE_SUFFIX = "_cover.png";
+    public static final String[] IMAGE_SUFFIX_LIST = new String[]{".jpeg", ".jpg", ".png", ".gif", ".bmp", ".webp"};
+    public static final String[] VIDEO_SUFFIX_LIST = new String[]{".mp4", ".avi", ".mov", ".mkv", ".flv", ".rmvb"};
 
     public static final String APPLY_INFO_TEMPLATE = "我是%s";
 

@@ -93,4 +93,21 @@ public class StringTools {
     public static String getChatSessionId4Group(String groupId) {
         return encodeMd5(groupId);
     }
+
+    public static String getFileSuffix(String fileName) {
+        if (isEmpty(fileName)) return null;
+        return fileName.substring(fileName.lastIndexOf("."));
+    }
+
+    public static boolean isNumber(String str) {
+        String checkNumber = "^[0-9]+$";
+        if (null == str) {
+            return false;
+        }
+        if (!str.matches(checkNumber)) {
+            return false;
+        }
+
+        return true;
+    }
 }
