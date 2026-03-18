@@ -38,6 +38,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 /**
  * 通道上下文工具类，用于管理用户和群组的WebSocket连接
@@ -116,7 +117,7 @@ public class ChannelContextUtils {
         wsInitData.setChatSessionList(chatSessionUserList);
 
         // 查询聊天信息
-        List<String> groupIdList = contactIdList.stream().filter(item -> item.startsWith(UserContactTypeEnum.GROUP.getPrefix())).toList();
+        List<String> groupIdList = contactIdList.stream().filter(item -> item.startsWith(UserContactTypeEnum.GROUP.getPrefix())).collect(Collectors.toList());
         groupIdList.add(userId);
         ChatMessageQuery messageQuery = new ChatMessageQuery();
         messageQuery.setContactIdList(groupIdList);

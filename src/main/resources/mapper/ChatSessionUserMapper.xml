@@ -69,7 +69,7 @@
 		    else 0
 		  end memberCount
 		FROM chat_session_user
-		    inner join chat_seesion on chat_session_user.session_id = chat_session.id
+		    inner join chat_session on chat_session_user.session_id = chat_session.session_id
 		<include refid="query_condition"/>
 		<if test="query.orderBy != null and query.orderBy != ''">
 			order by ${query.orderBy}
