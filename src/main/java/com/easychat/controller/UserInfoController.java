@@ -35,7 +35,7 @@ public class UserInfoController extends ABaseController {
         UserInfo userInfo = userInfoService.getUserInfoByUserId(tokenUserInfoDto.getUserId());
         UserInfoVO userInfoVO = CopyTools.copy(userInfo, UserInfoVO.class);
         userInfoVO.setAdmin(tokenUserInfoDto.getAdmin());
-        return getSuccessResponse(null);
+        return getSuccessResponse(userInfoVO);
     }
 
     @RequestMapping("/saveUserInfo")

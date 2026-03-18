@@ -89,8 +89,8 @@
 		SELECT user_contact_apply.*
 		<if test="query.queryContactInfo">
             ,case
-                when user_contact.contact_type = 0 then user_info.nick_name
-		        when user_contact.contact_type = 1 then group_info.group_name
+                when user_contact_apply.contact_type = 0 then user_info.nick_name
+		        when user_contact_apply.contact_type = 1 then group_info.group_name
             end as contact_name
         </if>
 		FROM user_contact_apply
