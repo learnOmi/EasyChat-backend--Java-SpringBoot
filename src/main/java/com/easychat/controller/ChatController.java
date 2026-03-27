@@ -7,19 +7,17 @@ import com.easychat.entity.dto.MessageSendDto;
 import com.easychat.entity.dto.TokenUserInfoDto;
 import com.easychat.entity.po.ChatMessage;
 import com.easychat.entity.vo.ResponseVO;
-import com.easychat.enums.MessageTypeEnum;
 import com.easychat.enums.ResponseCodeEnum;
 import com.easychat.exception.BusinessException;
 import com.easychat.service.ChatMessageService;
 import com.easychat.service.ChatSessionUserService;
-import com.easychat.utils.ArrayUtils;
 import com.easychat.utils.StringTools;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,7 +45,7 @@ public class ChatController extends ABaseController {
     @RequestMapping("/sendMessage")
     @GlobalInterceptor
     public ResponseVO sendMessage(HttpServletRequest request, @NotEmpty String contactId,
-                                  @NotEmpty @Max(500) String messageContent,
+                                  @NotEmpty @Size(max = 500) String messageContent,
                                   @NotNull Integer messageType,
                                   Long fileSize,
                                   String fileName,
@@ -59,7 +57,7 @@ public class ChatController extends ABaseController {
         chatMessage.setMessageContent(messageContent);
         chatMessage.setFileSize(fileSize);
         chatMessage.setFileName(fileName);
-        chatMessage.setFileType(fileType.byteValue());
+        chatMessage.setFileType(fileType != null ? fileType.byteValue() : null);
         MessageSendDto messageSendDto = chatMessageService.saveMessage(chatMessage, tokenUserInfoDto);
 
         return getSuccessResponse(messageSendDto);

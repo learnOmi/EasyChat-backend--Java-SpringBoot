@@ -136,6 +136,11 @@ public class ChatMessageServiceImpl implements ChatMessageService {
                 } else {
                     throw new BusinessException(ResponseCodeEnum.CODE_903);
                 }
+            } else {
+                UserContact userContact = userContactMapper.selectByUserIdAndContactId(tokenUserInfoDto.getUserId(), chatMessage.getContactId());
+                if (userContact == null || UserContactStatusEnum.FRIEND.getStatus().byteValue() != userContact.getStatus()) {
+                    throw new BusinessException(ResponseCodeEnum.CODE_902);
+                }
             }
         }
 
@@ -154,7 +159,7 @@ public class ChatMessageServiceImpl implements ChatMessageService {
         chatMessage.setSendTime(curTime);
 
         MessageTypeEnum messageTypeEnum = MessageTypeEnum.getByType(chatMessage.getMessageType().intValue());
-        if (null == messageTypeEnum || !ArrayUtils.contains(new Integer[]{MessageTypeEnum.CHAT.getType(), MessageTypeEnum.MEDIA_CHAT.getType()}, chatMessage.getMessageType())) {
+        if (null == messageTypeEnum || !ArrayUtils.contains(new Integer[]{MessageTypeEnum.CHAT.getType(), MessageTypeEnum.MEDIA_CHAT.getType()}, chatMessage.getMessageType().intValue())) {
             throw  new BusinessException(ResponseCodeEnum.CODE_600);
         }
         Integer status = MessageTypeEnum.MEDIA_CHAT == messageTypeEnum ? MessageStatusEnum.SENDING.getStatus() : MessageStatusEnum.SENDED.getStatus();

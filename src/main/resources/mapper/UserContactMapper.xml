@@ -13,6 +13,7 @@
 		<result column="create_time" property="createTime"/>
 		<!-- 状态0:非好友 1:好友 2:已删除好友 3:被好友删除 4: 已拉黑好友 5: 被好友拉黑 -->
 		<result column="status" property="status"/>
+        <result column="contactName" property="contactName"/>
 		<!-- 最后更新时间 -->
 		<result column="last_update_time" property="lastUpdateTime"/>
 	</resultMap>
@@ -73,12 +74,16 @@
 	</sql>
 
 	<!-- 通用查询条件 -->
-	<sql id="query_condition">
+	<sql id="query_condition_where">
 		<where>
 			<include refid="base_query_condition"/>
 			<include refid="base_query_condition_extend"/>
 		</where>
 	</sql>
+    <sql id="query_condition">
+        <include refid="base_query_condition"/>
+        <include refid="base_query_condition_extend"/>
+    </sql>
 
 	<!-- 查询列表 -->
 	<select id="selectList" resultMap="base_result_map">
@@ -102,7 +107,7 @@
                 and groupInfo.group_id != user_contact.user_id
             </if>
 		</if>
-		<include refid="query_condition"/>
+		<include refid="query_condition_where"/>
 		<if test="query.orderBy != null and query.orderBy != ''">
 			order by ${query.orderBy}
 		</if>
@@ -114,7 +119,7 @@
 	<!-- 查询数量 -->
 	<select id="selectCount" resultType="java.lang.Integer">
 		SELECT count(1) FROM user_contact 
-		<include refid="query_condition"/>
+		<include refid="query_condition_where"/>
 	</select>
 
 	<!-- 插入(匹配有值的字段) -->

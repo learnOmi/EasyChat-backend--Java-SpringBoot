@@ -129,8 +129,8 @@ public class ChatSessionUserServiceImpl implements ChatSessionUserService {
                 messageSendDto.setContactId(userContact.getContactId());
                 messageSendDto.setExtendData(contactName);
                 messageSendDto.setMessageType(MessageTypeEnum.CONTACT_NAME_UPDATE.getType());
-                messageSendDto.setSenderId(contactId);
-                messageSendDto.setSenderNickName(contactName);
+                messageSendDto.setSendUserId(contactId);
+                messageSendDto.setSendUserNickName(contactName);
                 messageHandler.sendMessage(messageSendDto);
             }
         }

@@ -217,7 +217,7 @@ public class UserInfoServiceImpl implements UserInfoService {
         UserContactQuery contactQuery = new UserContactQuery();
         contactQuery.setUserId(userInfo.getUserId());
         List<UserContact> contactList = this.userContactMapper.selectList(contactQuery);
-        List<String> contactIdList = contactList.stream().map(UserContact::getUserId).toList();
+        List<String> contactIdList = contactList.stream().map(UserContact::getContactId).toList();
         redisComponent.cleanUserContact(userInfo.getUserId());
         if (!contactIdList.isEmpty()) {
             redisComponent.addUserContactBatch(userInfo.getUserId(), contactIdList);

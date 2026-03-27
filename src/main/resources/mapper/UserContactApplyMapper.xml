@@ -77,12 +77,16 @@
 	</sql>
 
 	<!-- 通用查询条件 -->
-	<sql id="query_condition">
+	<sql id="query_condition_where">
 		<where>
 			<include refid="base_query_condition"/>
 			<include refid="base_query_condition_extend"/>
 		</where>
 	</sql>
+    <sql id="query_condition">
+        <include refid="base_query_condition"/>
+        <include refid="base_query_condition_extend"/>
+    </sql>
 
 	<!-- 查询列表 -->
 	<select id="selectList" resultMap="base_result_map">
@@ -98,7 +102,7 @@
             left join user_info on user_info.user_id = user_contact_apply.apply_user_id and user_contact_apply.receive_user_id = #{query.receiveUserId}
 		    left join group_info on group_info.group_id = user_contact_apply.contact_id and user_contact_apply.receive_user_id = #{query.receiveUserId}
 		</if>
-		<include refid="query_condition"/>
+		<include refid="query_condition_where"/>
 		<if test="query.orderBy != null and query.orderBy != ''">
 			order by ${query.orderBy}
 		</if>
@@ -110,12 +114,12 @@
 	<!-- 查询数量 -->
 	<select id="selectCount" resultType="java.lang.Integer">
 		SELECT count(1) FROM user_contact_apply 
-		<include refid="query_condition"/>
+		<include refid="query_condition_where"/>
 	</select>
 
 	<!-- 插入(匹配有值的字段) -->
 	<insert id="insert" parameterType="com.easychat.entity.po.UserContactApply">
-		<selectKey keyProperty="bean.apply_id" order="AFTER" resultType="Integer">
+		<selectKey keyProperty="bean.applyId" order="AFTER" resultType="Integer">
 			SELECT LAST_INSERT_ID()
 		</selectKey>
 		INSERT INTO user_contact_apply

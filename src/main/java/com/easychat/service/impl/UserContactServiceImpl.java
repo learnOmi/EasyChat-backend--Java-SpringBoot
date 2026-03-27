@@ -147,7 +147,7 @@ public class UserContactServiceImpl implements UserContactService {
         }
 
         UserContact userContact = this.userContactMapper.selectByUserIdAndContactId(userId, contactId);
-        resultDto.setStatus(Integer.valueOf(userContact == null ? null : userContact.getStatus()));
+        resultDto.setStatus(userContact == null ? UserContactStatusEnum.NOT_FRIEND.getStatus() : userContact.getStatus());
         return resultDto;
     }
 
@@ -298,12 +298,15 @@ public class UserContactServiceImpl implements UserContactService {
         userContactMapper.updateByUserIdAndContactId(userContact, userId, contactId);
 
         UserContact friendContact = new UserContact();
-        if (UserContactStatusEnum.DEL == statusEnum) {
-            friendContact.setStatus(UserContactStatusEnum.DEL_BE.getStatus().byteValue());
-        } else if (UserContactStatusEnum.BLACKLIST == statusEnum) {
-            friendContact.setStatus(UserContactStatusEnum.BLACKLIST_BE.getStatus().byteValue());
+        UserContact oldFriedContact = userContactMapper.selectByUserIdAndContactId(contactId, userId);
+        if (oldFriedContact.getStatus().equals(UserContactStatusEnum.FRIEND.getStatus().byteValue())) {
+            if (UserContactStatusEnum.DEL == statusEnum) {
+                friendContact.setStatus(UserContactStatusEnum.DEL_BE.getStatus().byteValue());
+            } else if (UserContactStatusEnum.BLACKLIST == statusEnum) {
+                friendContact.setStatus(UserContactStatusEnum.BLACKLIST_BE.getStatus().byteValue());
+            }
+            userContactMapper.updateByUserIdAndContactId(friendContact, contactId, userId);
         }
-        userContactMapper.updateByUserIdAndContactId(friendContact, contactId, userId);
 
         redisComponent.removeUserContact(userId, contactId);
         redisComponent.removeUserContact(contactId, userId);

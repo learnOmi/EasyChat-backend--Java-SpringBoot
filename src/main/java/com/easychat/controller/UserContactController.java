@@ -132,7 +132,7 @@ public class UserContactController extends ABaseController{
                 UserContactStatusEnum.FRIEND.getStatus(),
                 UserContactStatusEnum.DEL_BE.getStatus(),
                 UserContactStatusEnum.BLACKLIST_BE.getStatus()
-            }, userContact.getStatus())) {
+            }, userContact.getStatus().intValue())) {
             throw new BusinessException(ResponseCodeEnum.CODE_600);
         }
         UserInfo userInfo = userInfoService.getUserInfoByUserId(contactId);

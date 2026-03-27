@@ -137,8 +137,7 @@ public class UserContactApplyServiceImpl implements UserContactApplyService {
         if (userContact != null && ArrayUtils.contains(new Integer[] {
                 UserContactStatusEnum.BLACKLIST.getStatus(),
                 UserContactStatusEnum.BLACKLIST_BE_FIRST.getStatus()
-        }, userContact.getStatus())
-        )
+        }, userContact.getStatus().intValue()))
         {
             throw new BusinessException("对方已将你拉黑！");
         }

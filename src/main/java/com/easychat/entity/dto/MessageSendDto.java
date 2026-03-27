@@ -13,9 +13,9 @@ public class MessageSendDto<T> implements Serializable {
     // 会话ID
     private String sessionId;
     // 发送人
-    private String senderId;
+    private String sendUserId;
     // 发送人昵称
-    private String senderNickName;
+    private String sendUserNickName;
     // 联系人Id
     private String contactId;
     // 联系人名称
@@ -57,20 +57,20 @@ public class MessageSendDto<T> implements Serializable {
         this.sessionId = sessionId;
     }
 
-    public String getSenderId() {
-        return senderId;
+    public String getSendUserId() {
+        return sendUserId;
     }
 
-    public void setSenderId(String senderId) {
-        this.senderId = senderId;
+    public void setSendUserId(String senderId) {
+        this.sendUserId = senderId;
     }
 
-    public String getSenderNickName() {
-        return senderNickName;
+    public String getSendUserNickName() {
+        return sendUserNickName;
     }
 
-    public void setSenderNickName(String senderNickName) {
-        this.senderNickName = senderNickName;
+    public void setSendUserNickName(String senderNickName) {
+        this.sendUserNickName = senderNickName;
     }
 
     public String getContactId() {

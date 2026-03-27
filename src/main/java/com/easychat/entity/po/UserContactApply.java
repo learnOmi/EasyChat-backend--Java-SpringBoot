@@ -23,7 +23,7 @@ public class UserContactApply implements Serializable {
 	// 最后申请时间
 	private Long lastApplyTime;
 	// 状态0:待处理1:已同意2:已拒绝3:已拉黑
-	@JsonIgnore
+	//@JsonIgnore
 	private Byte status;
 	// 申请信息
 	private String applyInfo;

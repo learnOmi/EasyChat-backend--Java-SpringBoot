@@ -140,7 +140,7 @@
 
 	<!-- 插入(匹配有值的字段) -->
 	<insert id="insert" parameterType="com.easychat.entity.po.ChatMessage">
-		<selectKey keyProperty="bean.message_id" order="AFTER" resultType="Long">
+		<selectKey keyProperty="bean.messageId" order="AFTER" resultType="Long">
 			SELECT LAST_INSERT_ID()
 		</selectKey>
 		INSERT INTO chat_message
