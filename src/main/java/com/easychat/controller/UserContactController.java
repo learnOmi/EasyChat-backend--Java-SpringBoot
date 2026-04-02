@@ -3,6 +3,7 @@ package com.easychat.controller;
 import com.easychat.annotation.GlobalInterceptor;
 import com.easychat.entity.dto.TokenUserInfoDto;
 import com.easychat.entity.dto.UserContactSearchResultDto;
+import com.easychat.entity.po.GroupInfo;
 import com.easychat.entity.po.UserContact;
 import com.easychat.entity.po.UserContactApply;
 import com.easychat.entity.po.UserInfo;
@@ -16,6 +17,7 @@ import com.easychat.enums.ResponseCodeEnum;
 import com.easychat.enums.UserContactStatusEnum;
 import com.easychat.enums.UserContactTypeEnum;
 import com.easychat.exception.BusinessException;
+import com.easychat.service.GroupInfoService;
 import com.easychat.service.UserContactApplyService;
 import com.easychat.service.UserContactService;
 import com.easychat.service.UserInfoService;
@@ -25,6 +27,7 @@ import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -39,6 +42,8 @@ public class UserContactController extends ABaseController{
     private UserInfoService userInfoService;
     @Resource
     UserContactApplyService userContactApplyService;
+    @Autowired
+    private GroupInfoService groupInfoService;
 
     @RequestMapping("/search")
     @GlobalInterceptor
@@ -112,13 +117,27 @@ public class UserContactController extends ABaseController{
     @GlobalInterceptor
     public ResponseVO getContactInfo(HttpServletRequest request, @NotNull String contactId) {
         TokenUserInfoDto tokenUserInfoDto = getTokenUserInfoDto(request);
-        UserInfo userInfo = userInfoService.getUserInfoByUserId(contactId);
-        UserInfoVO userInfoVO = CopyTools.copy(userInfo, UserInfoVO.class);
-        userInfoVO.setContactStatus(UserContactStatusEnum.NOT_FRIEND.getStatus());
-        UserContact userContact = userContactService.getUserContactByUserIdAndContactId(tokenUserInfoDto.getUserId(), contactId);
-        if (userContact != null) {
-            userInfoVO.setContactStatus(UserContactStatusEnum.NOT_FRIEND.getStatus());
+        UserInfoVO userInfoVO;
+        if (contactId.startsWith(UserContactTypeEnum.USER.getPrefix())) {
+            UserInfo userInfo = userInfoService.getUserInfoByUserId(contactId);
+            userInfoVO = CopyTools.copy(userInfo, UserInfoVO.class);
+            UserContact userContact = userContactService.getUserContactByUserIdAndContactId(tokenUserInfoDto.getUserId(), contactId);
+            if (userContact == null) {
+                userInfoVO.setContactStatus(UserContactStatusEnum.NOT_FRIEND.getStatus());
+            } else {
+                userInfoVO.setContactStatus(userContact.getStatus().intValue());
+            }
+        } else {
+            userInfoVO = new UserInfoVO();
+            UserContact userContact = userContactService.getUserContactByUserIdAndContactId(tokenUserInfoDto.getUserId(), contactId);
+            GroupInfo groupInfo = groupInfoService.getGroupInfoByGroupId(contactId);
+            if (userContact != null && groupInfo != null) {
+                userInfoVO.setUserId(contactId);
+                userInfoVO.setNickName(groupInfo.getGroupName());
+                userInfoVO.setContactStatus(UserContactStatusEnum.FRIEND.getStatus());
+            }
         }
+
 
         return getSuccessResponse(userInfoVO);
     }

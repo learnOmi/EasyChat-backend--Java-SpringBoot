@@ -279,7 +279,7 @@ public class GroupInfoServiceImpl implements GroupInfoService {
         String[] contactIdList = contactIds.split(",");
         for (String contactId : contactIdList) {
             if(Constants.ZERO.equals(opType)) {
-                groupInfoService.leaveGroup(tokenUserInfoDto.getUserId(), groupId, MessageTypeEnum.LEAVE_GROUP);
+                groupInfoService.leaveGroup(contactId, groupId, MessageTypeEnum.LEAVE_GROUP);
             } else {
                 userContactService.addContact(contactId, null, groupId, UserContactTypeEnum.GROUP.getType(), null);
             }

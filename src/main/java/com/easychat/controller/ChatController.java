@@ -85,7 +85,7 @@ public class ChatController extends ABaseController {
             File file = null;
             if (!StringTools.isNumber(fileId)) {
                 String avatarFolderName = Constants.FILE_FOLDER_FILE + Constants.FILE_FOLDER_AVATAR;
-                String avatarPath = appConfig.getProjectFolder() + avatarFolderName + Constants.IMAGE_SUFFIX;
+                String avatarPath = appConfig.getProjectFolder() + avatarFolderName + fileId + Constants.IMAGE_SUFFIX;
                 if (showCover) {
                     avatarPath = avatarPath + Constants.COVER_IMAGE_SUFFIX;
                 }

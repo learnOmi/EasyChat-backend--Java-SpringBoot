@@ -19,8 +19,8 @@ public class Constants {
     public static final Integer LENGTH_11 = 11;
     public static final Integer LENGTH_20 = 20;
 
-    public static final String FILE_FOLDER_FILE = "/file/";
-    public static final String FILE_FOLDER_AVATAR = "/avatar/";
+    public static final String FILE_FOLDER_FILE = "file/";
+    public static final String FILE_FOLDER_AVATAR = "avatar/";
     public static final Long FILE_SIZE_MB = 1024 * 1024L;
 
     public static final String IMAGE_SUFFIX = ".png";
@@ -32,7 +32,7 @@ public class Constants {
 
     public static final String REGEX_PASSWORD = "^(?=.*\\d)(?=.*[a-zA-Z])[0-9A-Za-z~!@#$%^&*_]{8,10}$";
 
-    public static final String APP_UPDATE_FOLDER = "/appUpdate/";
+    public static final String APP_UPDATE_FOLDER = "appUpdate/";
     public static final String APP_EXE_SUFFIX = ".exe";
     public static final String APP_NAME = "EasyChat";
 

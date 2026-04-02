@@ -288,8 +288,8 @@ public class ChatMessageServiceImpl implements ChatMessageService {
         String contactId = message.getContactId();
         // 根据联系人ID前缀获取联系人类型
         UserContactTypeEnum contactTypeEnum = UserContactTypeEnum.getByPrefix(contactId);
-        // 如果是私聊消息，检查用户是否有权限（只有发送者可以下载）
-        if (UserContactTypeEnum.USER == contactTypeEnum && !tokenUserInfoDto.getUserId().equals(message.getSendUserId())) {
+        // 如果是私聊消息，检查用户是否有权限（只有发送者或者接收者可以下载）
+        if (UserContactTypeEnum.USER == contactTypeEnum && !tokenUserInfoDto.getUserId().equals(message.getSendUserId()) && !message.getContactId().equals(tokenUserInfoDto.getUserId())) {
             throw new BusinessException(ResponseCodeEnum.CODE_600);
         }
         // 如果是群聊消息，检查用户是否是群成员

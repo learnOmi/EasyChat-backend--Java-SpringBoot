@@ -104,7 +104,7 @@
 		<if test="query.queryGroupInfo != null and query.queryGroupInfo == true">
             inner join group_info groupInfo on groupInfo.group_id = user_contact.contact_id
 		    <if test="query.excludeMyGroup != null and query.excludeMyGroup == true">
-                and groupInfo.group_id != user_contact.user_id
+                and groupInfo.group_owner_id != user_contact.user_id
             </if>
 		</if>
 		<include refid="query_condition_where"/>
