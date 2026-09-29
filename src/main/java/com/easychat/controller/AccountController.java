@@ -9,6 +9,8 @@ import com.easychat.redis.RedisComponent;
 import com.easychat.redis.RedisUtils;
 import com.easychat.service.UserInfoService;
 import com.wf.captcha.ArithmeticCaptcha;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotEmpty;
@@ -24,6 +26,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+@Tag(name = "账号模块", description = "验证码、注册、登录、系统设置")
 @RestController("accountController")
 @RequestMapping("/account")
 @Validated
@@ -37,6 +40,7 @@ public class AccountController extends ABaseController {
     @Resource
     private RedisComponent redisComponent;
 
+    @Operation(summary = "获取图片验证码", description = "返回 base64 图片与 checkCodeKey，登录/注册时需回传")
     @RequestMapping("/checkCode")
     public ResponseVO checkCode() {
         ArithmeticCaptcha captcha = new ArithmeticCaptcha(100, 42);
@@ -66,6 +70,7 @@ public class AccountController extends ABaseController {
         }
     }
 
+    @Operation(summary = "用户登录", description = "校验图片验证码后返回用户信息与 token")
     @RequestMapping("/login")
     public ResponseVO login(@NotEmpty String checkCodeKey, @NotEmpty @Email String email, @NotEmpty String password, @NotEmpty String checkCode) {
         try {
