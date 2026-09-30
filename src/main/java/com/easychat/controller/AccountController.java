@@ -10,6 +10,7 @@ import com.easychat.redis.RedisUtils;
 import com.easychat.service.UserInfoService;
 import com.wf.captcha.ArithmeticCaptcha;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.validation.constraints.Email;
@@ -57,8 +58,13 @@ public class AccountController extends ABaseController {
         return  getSuccessResponse(result);
     }
 
+    @Operation(summary = "用户注册", description = "校验图片验证码后注册新用户；data 为 null")
     @RequestMapping("/register")
-    public ResponseVO register(@NotEmpty @Email String email, @NotEmpty @Pattern(regexp = Constants.REGEX_PASSWORD) String password, @NotEmpty String nickName, @NotEmpty String checkCode, @NotEmpty String checkCodeKey) {
+    public ResponseVO register(@Parameter(description = "邮箱") @NotEmpty @Email String email,
+                               @Parameter(description = "密码，需满足 REGEX_PASSWORD 规则") @NotEmpty @Pattern(regexp = Constants.REGEX_PASSWORD) String password,
+                               @Parameter(description = "昵称") @NotEmpty String nickName,
+                               @Parameter(description = "用户输入的图片验证码") @NotEmpty String checkCode,
+                               @Parameter(description = "校验码标识，由 /account/checkCode 返回") @NotEmpty String checkCodeKey) {
         try {
             if (!checkCode.equalsIgnoreCase((String) redisUtils.get(Constants.REDIS_KEY_CHECK_CODE + checkCodeKey))) {
                 throw new BusinessException("图片验证码不正确");
@@ -70,9 +76,12 @@ public class AccountController extends ABaseController {
         }
     }
 
-    @Operation(summary = "用户登录", description = "校验图片验证码后返回用户信息与 token")
+    @Operation(summary = "用户登录", description = "校验图片验证码后返回用户信息与 token；data 为 UserInfoVO")
     @RequestMapping("/login")
-    public ResponseVO login(@NotEmpty String checkCodeKey, @NotEmpty @Email String email, @NotEmpty String password, @NotEmpty String checkCode) {
+    public ResponseVO login(@Parameter(description = "校验码标识，由 /account/checkCode 返回") @NotEmpty String checkCodeKey,
+                            @Parameter(description = "邮箱") @NotEmpty @Email String email,
+                            @Parameter(description = "密码") @NotEmpty String password,
+                            @Parameter(description = "用户输入的图片验证码") @NotEmpty String checkCode) {
         try {
             if (!checkCode.equalsIgnoreCase((String) redisUtils.get(Constants.REDIS_KEY_CHECK_CODE + checkCodeKey))) {
                 throw new BusinessException("图片验证码不正确");
@@ -85,6 +94,7 @@ public class AccountController extends ABaseController {
         }
     }
 
+    @Operation(summary = "获取系统设置", description = "需要登录；data 为 SysSettingDto（群数量/成员上限、文件大小上限、机器人信息等）")
     @GlobalInterceptor
     @RequestMapping("/getSysSetting")
     public ResponseVO getSysSetting() {

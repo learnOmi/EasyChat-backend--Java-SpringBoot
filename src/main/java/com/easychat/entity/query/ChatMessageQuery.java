@@ -1,5 +1,7 @@
 package com.easychat.entity.query;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.util.List;
 
 /**
@@ -7,48 +9,70 @@ import java.util.List;
  * @author 'Tong'
  * @since 2026/03/13
  */
+@Schema(description = "聊天消息表查询")
 public class ChatMessageQuery extends BaseQuery {
 	// 消息自增ID
+	@Schema(description = "消息自增ID")
 	private Long messageId;
 	// 会话ID
+	@Schema(description = "会话ID")
 	private String sessionId;
+	@Schema(description = "会话ID（模糊查询）")
 	private String sessionIdFuzzy;
 
 	// 消息类型
+	@Schema(description = "消息类型")
 	private Byte messageType;
 	// 消息内容
+	@Schema(description = "消息内容")
 	private String messageContent;
+	@Schema(description = "消息内容（模糊查询）")
 	private String messageContentFuzzy;
 
 	// 发送人工D
+	@Schema(description = "发送人ID")
 	private String sendUserId;
+	@Schema(description = "发送人ID（模糊查询）")
 	private String sendUserIdFuzzy;
 
 	// 发送人昵称
+	@Schema(description = "发送人昵称")
 	private String sendUserNickName;
+	@Schema(description = "发送人昵称（模糊查询）")
 	private String sendUserNickNameFuzzy;
 
 	// 发送时间
+	@Schema(description = "发送时间")
 	private Long sendTime;
 	// 接收联系人ID
+	@Schema(description = "接收联系人ID")
 	private String contactId;
+	@Schema(description = "接收联系人ID（模糊查询）")
 	private String contactIdFuzzy;
 
 	// 联系人类型0:单聊1:群聊
+	@Schema(description = "联系人类型0:单聊1:群聊")
 	private Byte contactType;
 	// 文件大小
+	@Schema(description = "文件大小")
 	private Long fileSize;
 	// 文件名
+	@Schema(description = "文件名")
 	private String fileName;
+	@Schema(description = "文件名（模糊查询）")
 	private String fileNameFuzzy;
 
 	// 文件类型
+	@Schema(description = "文件类型")
 	private Byte fileType;
 	// 状态0:正在发送1:已发送
+	@Schema(description = "状态0:正在发送1:已发送")
 	private Byte status;
 
+    @Schema(description = "联系人ID列表")
     private List<String> contactIdList;
 
+    @Schema(description = "最后接收消息时间")
     private Long lastReceiveTime;
 
     public Long getLastReceiveTime() {

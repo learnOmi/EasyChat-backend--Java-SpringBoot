@@ -1,13 +1,21 @@
 package com.easychat.entity.query;
 
 import com.easychat.enums.PageSize;
+import io.swagger.v3.oas.annotations.media.Schema;
 
+@Schema(description = "简单分页")
 public class SimplePage {
+    @Schema(description = "页码")
     private Integer pageNo;
+    @Schema(description = "每页数量")
     private Integer pageSize;
+    @Schema(description = "总数量")
     private Integer countTotal;
+    @Schema(description = "总页数")
     private Integer pageTotal;
+    @Schema(description = "起始位置")
     private Integer start;
+    @Schema(description = "结束位置（查询条数）")
     private Integer end;
 
     public SimplePage() {

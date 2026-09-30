@@ -1,14 +1,23 @@
 package com.easychat.entity.dto;
 
 import com.easychat.enums.UserContactStatusEnum;
+import io.swagger.v3.oas.annotations.media.Schema;
 
+@Schema(description = "联系人搜索结果")
 public class UserContactSearchResultDto {
+    @Schema(description = "联系人ID")
     private String contactId;
+    @Schema(description = "联系人类型")
     private String contactType;
+    @Schema(description = "昵称")
     private String nickName;
+    @Schema(description = "状态")
     private Integer status;
+    @Schema(description = "状态名称")
     private String statusName;
+    @Schema(description = "性别 0:女 1:男")
     private Integer sex;
+    @Schema(description = "地区")
     private String areaName;
 
     public String getContactId() {

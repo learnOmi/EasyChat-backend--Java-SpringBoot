@@ -1,58 +1,85 @@
 package com.easychat.entity.query;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.util.Date;
 /**
  * 用户信息表查询
  * @author 'Tong'
  * @since 2025/09/28
  */
+@Schema(description = "用户信息表查询")
 public class UserInfoQuery extends BaseQuery {
 	// 用户id
+	@Schema(description = "用户ID")
 	private String userId;
+    @Schema(description = "用户ID（模糊查询）")
     private String userIdFuzzy;
 	// 邮箱
+	@Schema(description = "邮箱")
 	private String email;
+	@Schema(description = "邮箱（模糊查询）")
 	private String emailFuzzy;
 
 	// 昵称
+	@Schema(description = "昵称")
 	private String nickName;
+	@Schema(description = "昵称（模糊查询）")
 	private String nickNameFuzzy;
 
 	// 0:直接加入 1:同意后加入
+	@Schema(description = "0:直接加入 1:同意后加入")
 	private Byte joinType;
 	// 性别 0:女 1:男
+	@Schema(description = "性别 0:女 1:男")
 	private Byte sex;
 	// 密码
+	@Schema(description = "密码")
 	private String password;
+	@Schema(description = "密码（模糊查询）")
 	private String passwordFuzzy;
 
 	// 个性签名
+	@Schema(description = "个性签名")
 	private String personalSignature;
+	@Schema(description = "个性签名（模糊查询）")
 	private String personalSignatureFuzzy;
 
 	// 状态
+	@Schema(description = "状态")
 	private Byte status;
 	// 创建时间
+	@Schema(description = "创建时间")
 	private Date createTime;
+	@Schema(description = "创建时间起始")
 	private String createTimeStart;
 
+	@Schema(description = "创建时间结束")
 	private String createTimeEnd;
 
 	// 最后登录时间
+	@Schema(description = "最后登录时间")
 	private Date lastLoginTime;
+	@Schema(description = "最后登录时间起始")
 	private String lastLoginTimeStart;
 
+	@Schema(description = "最后登录时间结束")
 	private String lastLoginTimeEnd;
 
 	// 地区
+	@Schema(description = "地区")
 	private String areaName;
+	@Schema(description = "地区（模糊查询）")
 	private String areaNameFuzzy;
 
 	// 地区编号
+	@Schema(description = "地区编号")
 	private String areaCode;
+	@Schema(description = "地区编号（模糊查询）")
 	private String areaCodeFuzzy;
 
 	// 最后离开时间
+	@Schema(description = "最后离开时间")
 	private Long lastOffTime;
 	public void setUserId(String userId) {
 		this.userId = userId;

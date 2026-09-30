@@ -1,14 +1,22 @@
 package com.easychat.entity.vo;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.util.List;
 
 import java.util.ArrayList;
 
+@Schema(description = "分页结果")
 public class PaginationResultVO<T> {
+    @Schema(description = "页码")
     private Integer pageNo;
+    @Schema(description = "每页数量")
     private Integer pageSize;
+    @Schema(description = "总数量")
     private Integer totalCount;
+    @Schema(description = "总页数")
     private Integer pageTotal;
+    @Schema(description = "数据列表")
     private List<T> list = new ArrayList<T>();
 
     public PaginationResultVO(Integer totalCount, Integer pageNo, Integer pageSize, List<T> list) {

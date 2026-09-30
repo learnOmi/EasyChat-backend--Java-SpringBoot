@@ -2,6 +2,7 @@ package com.easychat.entity.po;
 
 import com.easychat.enums.UserContactStatusEnum;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.io.Serializable;
 /**
@@ -9,27 +10,38 @@ import java.io.Serializable;
  * @author 'Tong'
  * @since 2025/10/17
  */
+@Schema(description = "联系人申请")
 public class UserContactApply implements Serializable {
 	// 自增ID
+	@Schema(description = "自增ID")
 	private Integer applyId;
 	// 申请人id
+	@Schema(description = "申请人ID")
 	private String applyUserId;
 	// 接收人ID
+	@Schema(description = "接收人ID")
 	private String receiveUserId;
 	// 联系人类型0:好友1:群组
+	@Schema(description = "联系人类型0:好友1:群组")
 	private Byte contactType;
 	// 联系人群组ID
+	@Schema(description = "联系人群组ID")
 	private String contactId;
 	// 最后申请时间
+	@Schema(description = "最后申请时间")
 	private Long lastApplyTime;
 	// 状态0:待处理1:已同意2:已拒绝3:已拉黑
 	//@JsonIgnore
+	@Schema(description = "状态0:待处理1:已同意2:已拒绝3:已拉黑")
 	private Byte status;
 	// 申请信息
+	@Schema(description = "申请信息")
 	private String applyInfo;
 
+    @Schema(description = "联系人名称")
     private String contactName;
 
+    @Schema(description = "状态名称")
     private String statusName;
 
 	public void setApplyId(Integer applyId) {

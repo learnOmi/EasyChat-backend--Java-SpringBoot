@@ -5,6 +5,7 @@ import java.util.Date;
 
 import com.easychat.entity.constants.Constants;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.springframework.format.annotation.DateTimeFormat;
 import com.easychat.utils.DateUtils;
 import com.easychat.enums.DateTimePatternEnum;
@@ -14,39 +15,54 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  * @author 'Tong'
  * @since 2025/09/28
  */
+@Schema(description = "用户信息表")
 public class UserInfo implements Serializable {
 	// 用户id
+	@Schema(description = "用户ID")
 	private String userId;
 	// 邮箱
+	@Schema(description = "邮箱")
 	private String email;
 	// 昵称
+	@Schema(description = "昵称")
 	private String nickName;
 	// 0:直接加入 1:同意后加入
+	@Schema(description = "0:直接加入 1:同意后加入")
 	private Byte joinType;
 	// 性别 0:女 1:男
+	@Schema(description = "性别 0:女 1:男")
 	private Byte sex;
 	// 密码
+	@Schema(description = "密码")
 	private String password;
 	// 个性签名
+	@Schema(description = "个性签名")
 	private String personalSignature;
 	// 状态
 	@JsonIgnore
+	@Schema(description = "状态")
 	private Byte status;
 	// 创建时间
 	@JsonFormat(pattern="yyyy-MM-dd HH:mm:ss",timezone="GMT+8")
 	@DateTimeFormat(pattern="yyyy-MM-dd HH:mm:ss")
+	@Schema(description = "创建时间")
 	private Date createTime;
 	// 最后登录时间
 	@JsonFormat(pattern="yyyy-MM-dd HH:mm:ss",timezone="GMT+8")
 	@DateTimeFormat(pattern="yyyy-MM-dd HH:mm:ss")
+	@Schema(description = "最后登录时间")
 	private Date lastLoginTime;
 	// 地区
+	@Schema(description = "地区")
 	private String areaName;
 	// 地区编号
+	@Schema(description = "地区编号")
 	private String areaCode;
 	// 最后离开时间
+	@Schema(description = "最后离开时间")
 	private Long lastOffTime;
 
+    @Schema(description = "在线状态 0:离线 1:在线")
     private Integer onlineType;
 
     public Integer getOnlineType() {

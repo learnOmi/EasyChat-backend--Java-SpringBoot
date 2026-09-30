@@ -1,5 +1,7 @@
 package com.easychat.entity.po;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.io.Serializable;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 /**
@@ -7,15 +9,20 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  * @author 'Tong'
  * @since 2025/09/28
  */
+@Schema(description = "靓号表")
 public class UserInfoBeauty implements Serializable {
 	// 
+	@Schema(description = "自增ID")
 	private Integer id;
 	// 邮箱
+	@Schema(description = "邮箱")
 	private String email;
 	// 用户id
+	@Schema(description = "用户ID")
 	private String userId;
 	// 0: 未启用 1:启用
 	@JsonIgnore
+	@Schema(description = "0: 未启用 1:启用")
 	private Byte status;
 
 	public void setId(Integer id) {

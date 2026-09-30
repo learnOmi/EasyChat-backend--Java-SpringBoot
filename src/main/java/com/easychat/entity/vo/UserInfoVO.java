@@ -1,19 +1,32 @@
 package com.easychat.entity.vo;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.io.Serializable;
 
+@Schema(description = "用户信息")
 public class UserInfoVO implements Serializable {
     private static final long serialVersionUID = -720784055540385571L;
 
+    @Schema(description = "用户ID")
     private String userId;
+    @Schema(description = "昵称")
     private String nickName;
+    @Schema(description = "性别 0:女 1:男")
     private Integer sex;
+    @Schema(description = "加入类型 0:直接加入 1:同意后加入")
     private Integer joinType;
+    @Schema(description = "个性签名")
     private String personalSignature;
+    @Schema(description = "地区编号")
     private String areaCode;
+    @Schema(description = "地区")
     private String areaName;
+    @Schema(description = "登录令牌")
     private String token;
+    @Schema(description = "是否管理员")
     private Boolean admin;
+    @Schema(description = "联系人状态 0:非好友 1:好友 2:已删除好友 3:被好友删除 4:已拉黑好友 5:被好友拉黑")
     private Integer contactStatus;
 
     // getter和setter方法

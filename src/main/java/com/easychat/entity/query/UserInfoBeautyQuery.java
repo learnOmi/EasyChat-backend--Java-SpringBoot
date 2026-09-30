@@ -1,21 +1,30 @@
 package com.easychat.entity.query;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 /**
  * 靓号表查询
  * @author 'Tong'
  * @since 2025/09/28
  */
+@Schema(description = "靓号表查询")
 public class UserInfoBeautyQuery extends BaseQuery {
 	// 
+	@Schema(description = "自增ID")
 	private Integer id;
 	// 邮箱
+	@Schema(description = "邮箱")
 	private String email;
+	@Schema(description = "邮箱（模糊查询）")
 	private String emailFuzzy;
 
 	// 用户id
+	@Schema(description = "用户ID")
 	private String userId;
+    @Schema(description = "用户ID（模糊查询）")
     private String userIdFuzzy;
 	// 0: 未启用 1:启用
+	@Schema(description = "0: 未启用 1:启用")
 	private Byte status;
 	public void setId(Integer id) {
 		this.id = id;

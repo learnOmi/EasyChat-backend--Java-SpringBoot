@@ -12,6 +12,9 @@ import com.easychat.exception.BusinessException;
 import com.easychat.service.ChatMessageService;
 import com.easychat.service.ChatSessionUserService;
 import com.easychat.utils.StringTools;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -29,6 +32,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.OutputStream;
 
+@Tag(name = "聊天消息模块", description = "发送消息、上传/下载聊天文件")
 @RestController
 @RequestMapping("/chat")
 public class ChatController extends ABaseController {
@@ -42,14 +46,16 @@ public class ChatController extends ABaseController {
     @Resource
     private AppConfig appConfig;
 
+    @Operation(summary = "发送消息", description = "需登录；data 为 MessageSendDto（会话、消息内容、联系人信息等）")
     @RequestMapping("/sendMessage")
     @GlobalInterceptor
-    public ResponseVO sendMessage(HttpServletRequest request, @NotEmpty String contactId,
-                                  @NotEmpty @Size(max = 500) String messageContent,
-                                  @NotNull Integer messageType,
-                                  Long fileSize,
-                                  String fileName,
-                                  Integer fileType) {
+    public ResponseVO sendMessage(HttpServletRequest request,
+                                  @Parameter(description = "接收方ID（用户ID或群ID）") @NotEmpty String contactId,
+                                  @Parameter(description = "消息内容，最长 500 字") @NotEmpty @Size(max = 500) String messageContent,
+                                  @Parameter(description = "消息类型") @NotNull Integer messageType,
+                                  @Parameter(description = "文件大小（文件/媒体消息）") Long fileSize,
+                                  @Parameter(description = "文件名（文件/媒体消息）") String fileName,
+                                  @Parameter(description = "文件类型（文件/媒体消息）") Integer fileType) {
         TokenUserInfoDto tokenUserInfoDto = getTokenUserInfoDto(request);
         ChatMessage chatMessage = new ChatMessage();
         chatMessage.setContactId(contactId);
@@ -63,20 +69,24 @@ public class ChatController extends ABaseController {
         return getSuccessResponse(messageSendDto);
     }
 
+    @Operation(summary = "上传消息文件", description = "需登录；上传文件及其封面并绑定到消息；data 为 null")
     @RequestMapping("/uploadFile")
     @GlobalInterceptor
     public ResponseVO uploadFile(HttpServletRequest request,
-                                 @NotNull Long messageId,
-                                 @NotNull MultipartFile file,
-                                 @NotNull MultipartFile cover) {
+                                 @Parameter(description = "消息ID") @NotNull Long messageId,
+                                 @Parameter(description = "文件") @NotNull MultipartFile file,
+                                 @Parameter(description = "文件封面") @NotNull MultipartFile cover) {
         TokenUserInfoDto tokenUserInfoDto = getTokenUserInfoDto(request);
         chatMessageService.saveMessageFile(tokenUserInfoDto.getUserId(), messageId, file, cover);
         return getSuccessResponse(null);
     }
 
+    @Operation(summary = "下载文件/头像", description = "需登录；直接以附件流写出（无统一响应体）；fileId 为数字时按消息文件下载，否则按用户头像文件名下载")
     @RequestMapping("/downloadFile")
     @GlobalInterceptor
-    public void downloadFile(HttpServletRequest request, HttpServletResponse response, @NotEmpty String fileId, @NotNull Boolean showCover) {
+    public void downloadFile(HttpServletRequest request, HttpServletResponse response,
+                             @Parameter(description = "文件ID（消息文件ID）或头像文件名") @NotEmpty String fileId,
+                             @Parameter(description = "是否下载封面") @NotNull Boolean showCover) {
         TokenUserInfoDto tokenUserInfoDto = getTokenUserInfoDto(request);
 
         OutputStream out = null;

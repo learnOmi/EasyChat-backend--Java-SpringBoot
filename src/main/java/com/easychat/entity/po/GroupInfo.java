@@ -4,6 +4,7 @@ import com.easychat.enums.DateTimePatternEnum;
 import com.easychat.utils.DateUtils;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import java.io.Serializable;
@@ -13,26 +14,36 @@ import java.util.Date;
  * @author 'Tong'
  * @since 2025/10/17
  */
+@Schema(description = "群组信息")
 public class GroupInfo implements Serializable {
 	// 群ID
+	@Schema(description = "群ID")
 	private String groupId;
 	// 群组名
+	@Schema(description = "群组名")
 	private String groupName;
 	// 群主id
+	@Schema(description = "群主ID")
 	private String groupOwnerId;
 	// 创建时间
 	@JsonFormat(pattern="yyyy-MM-dd HH:mm:ss",timezone="GMT+8")
 	@DateTimeFormat(pattern="yyyy-MM-dd HH:mm:ss")
+	@Schema(description = "创建时间")
 	private Date createTime;
 	// 群公告
+	@Schema(description = "群公告")
 	private String groupNotice;
 	//  0 :直接加入 1 :管理员同意后加入 
+	@Schema(description = "0:直接加入 1:管理员同意后加入")
 	private Byte joinType;
 	// 状态1:正常0:解散
 	@JsonIgnore
+	@Schema(description = "状态1:正常0:解散")
 	private Byte status;
     // 成员数
+    @Schema(description = "成员数")
     private Integer memberCount;
+    @Schema(description = "群主昵称")
     private String groupOwnerNickName;
 
 	public void setGroupId(String groupId) {

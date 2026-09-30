@@ -2,6 +2,7 @@ package com.easychat.entity.po;
 
 import com.easychat.enums.UserContactTypeEnum;
 import com.easychat.utils.StringTools;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.io.Serializable;
 /**
@@ -9,24 +10,33 @@ import java.io.Serializable;
  * @author 'Tong'
  * @since 2026/03/13
  */
+@Schema(description = "会话用户")
 public class ChatSessionUser implements Serializable {
     private static final long serialVersionUID = -882472298829182760L;
 
 	// 用户ID
+	@Schema(description = "用户ID")
 	private String userId;
 	// 联系人ID
+	@Schema(description = "联系人ID")
 	private String contactId;
 	// 会话ID
+	@Schema(description = "会话ID")
 	private String sessionId;
 	// 联系人名称
+	@Schema(description = "联系人名称")
 	private String contactName;
 
+    @Schema(description = "最后的消息")
     private String lastMessage;
 
+    @Schema(description = "最后接收消息时间")
     private Long lastReceiveTime;
 
+    @Schema(description = "成员数")
     private Integer memberCount;
 
+    @Schema(description = "联系人类型")
     private Integer contactType;
 
     public Integer getContactType() {

@@ -1,16 +1,26 @@
 package com.easychat.entity.vo;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.io.Serializable;
 import java.util.List;
 
+@Schema(description = "App更新信息")
 public class AppUpdateVo implements Serializable {
     private static final long serialVersionUID = 4756060542150096340L;
+    @Schema(description = "自增ID")
     private Integer id;
+    @Schema(description = "版本号")
     private String version;
+    @Schema(description = "更新内容列表")
     private List<String> updateList;
+    @Schema(description = "文件大小")
     private Long size;
+    @Schema(description = "文件名")
     private String fileName;
+    @Schema(description = "文件类型 0:本地文件 1:外链")
     private Integer fileType;
+    @Schema(description = "外链地址")
     private String outerLink;
     public Integer getFileType() {
         return fileType;

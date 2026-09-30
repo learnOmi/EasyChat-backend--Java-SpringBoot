@@ -1,44 +1,64 @@
 package com.easychat.entity.query;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.util.Date;
 /**
  * 联系人查询
  * @author 'Tong'
  * @since 2025/10/17
  */
+@Schema(description = "联系人查询")
 public class UserContactQuery extends BaseQuery {
 	// 用户ID
+	@Schema(description = "用户ID")
 	private String userId;
+	@Schema(description = "用户ID（模糊查询）")
 	private String userIdFuzzy;
 
 	// 联系人ID或者群组ID
+	@Schema(description = "联系人ID或者群组ID")
 	private String contactId;
+	@Schema(description = "联系人ID或者群组ID（模糊查询）")
 	private String contactIdFuzzy;
 
 	// 联系人类型0:好友1:群组
+	@Schema(description = "联系人类型0:好友1:群组")
 	private Byte contactType;
 	// 创建时间
+	@Schema(description = "创建时间")
 	private Date createTime;
+	@Schema(description = "创建时间起始")
 	private String createTimeStart;
 
+	@Schema(description = "创建时间结束")
 	private String createTimeEnd;
 
 	// 状态0:非好友 1:好友 2:已删除好友 3:被好友删除 4: 已拉黑好友 5: 被好友拉黑
+	@Schema(description = "状态0:非好友 1:好友 2:已删除好友 3:被好友删除 4: 已拉黑好友 5: 被好友拉黑")
 	private Byte status;
 	// 最后更新时间
+	@Schema(description = "最后更新时间")
 	private Date lastUpdateTime;
+	@Schema(description = "最后更新时间起始")
 	private String lastUpdateTimeStart;
 
+	@Schema(description = "最后更新时间结束")
 	private String lastUpdateTimeEnd;
 
+    @Schema(description = "是否联查用户信息")
     private Boolean queryUserInfo;
 
+    @Schema(description = "是否联查群组信息")
     private Boolean queryGroupInfo;
 
+    @Schema(description = "是否联查联系人用户信息")
     private Boolean queryContactUserInfo;
 
+    @Schema(description = "是否排除我的群组")
     private Boolean excludeMyGroup;
 
+    @Schema(description = "状态数组")
     private Integer[] statusArray;
 
 	public void setUserId(String userId) {

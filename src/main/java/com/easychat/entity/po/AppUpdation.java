@@ -5,6 +5,7 @@ import java.util.Date;
 
 import com.easychat.utils.StringTools;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.springframework.format.annotation.DateTimeFormat;
 import com.easychat.utils.DateUtils;
 import com.easychat.enums.DateTimePatternEnum;
@@ -14,27 +15,37 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  * @author 'Tong'
  * @since 2026/03/02
  */
+@Schema(description = "app发布")
 public class AppUpdation implements Serializable {
 	// 自增ID
+	@Schema(description = "自增ID")
 	private Integer id;
 	// 版本号
+	@Schema(description = "版本号")
 	private String version;
 	// 更新描述
+	@Schema(description = "更新描述")
 	private String updateDesc;
 	// 创建时间
 	@JsonFormat(pattern="yyyy-MM-dd HH:mm:ss",timezone="GMT+8")
 	@DateTimeFormat(pattern="yyyy-MM-dd HH:mm:ss")
+	@Schema(description = "创建时间")
 	private Date createTime;
 	// 0:未发布 1:灰度发布 2:全网发布
 	@JsonIgnore
+	@Schema(description = "0:未发布 1:灰度发布 2:全网发布")
 	private Byte status;
 	// 灰度id
+	@Schema(description = "灰度ID")
 	private String grayscaleUid;
 	// 文件类型 0:本地文件 1:外链
+	@Schema(description = "文件类型 0:本地文件 1:外链")
 	private Byte fileType;
 	// 外链地址
+	@Schema(description = "外链地址")
 	private String outerLink;
 
+    @Schema(description = "更新描述数组")
     private String[] updateDescArray;
 
 	public void setId(Integer id) {
