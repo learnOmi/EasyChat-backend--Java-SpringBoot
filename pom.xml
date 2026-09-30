@@ -58,6 +58,17 @@
             <version>${mysql.version}</version>
         </dependency>
 
+        <!-- flyway：数据库版本管理，启动时自动执行 db/migration 下的迁移脚本 -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+        </dependency>
+        <!-- flyway 的 MySQL 方言支持（Flyway 9.x 起数据库支持已拆分为独立模块） -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-mysql</artifactId>
+        </dependency>
+
         <!-- easycaptcha -->
         <dependency>
             <groupId>com.github.whvcse</groupId>
