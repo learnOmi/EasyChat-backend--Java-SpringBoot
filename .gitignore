@@ -44,9 +44,10 @@ ehthumbs.db
 Thumbs.db
 
 # 环境变量和配置文件（包含敏感信息）
-*.properties
-*.yml
-*.yaml
+src/main/resources/application-local.properties
+src/main/resources/application-local.yml
+*-local.properties
+*-local.yml
 .env
 .env.local
 .env.development.local
