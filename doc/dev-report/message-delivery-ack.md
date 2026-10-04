@@ -288,3 +288,37 @@ A: sendMessage → 落库 status=1 → 推送(B)
 - **影响**：一次心跳两条 ERROR，频率为 5 秒/连接；连接数一多即刷爆日志、淹没真实错误，并持续浪费异常构造与堆栈填充。`saveHeartBeat` 在 `try` 之外，故**心跳续期与连接本身不受影响**，属日志与性能噪音，非功能性故障。
 - **修复（方案 A）**：在 `StringTools.isEmpty(text)` 之后增加首字符短路 `if (!text.startsWith("{")) { return; }`。心跳等非 JSON 帧直接返回，不再进入解析；`try/catch` 保留，继续接住「形似 JSON 但解析失败」的脏数据。
 - **验证**：`mvn -q compile -DskipTests` → 成功。
+
+### 13.7 心跳链路整体修复（2026-10-04，按最佳实践）
+
+评审 `HanlderHeartBeat` / `NettyWebSocketStarter` / `wsClient.js` 后，心跳链路共识别出 5 处问题，本次一并修复。
+
+| # | 问题 | 根因 | 修复 |
+| --- | --- | --- | --- |
+| A | 写空闲分支是死代码 | `IdleStateHandler(6, 0, 0)` 只启用了读空闲，`writerIdleTime=0`，`WRITER_IDLE` 永不触发；原注释「6 秒内没有读写操作」与实现不符 | 删除 `WRITER_IDLE` 分支；`NettyWebSocketStarter` 注释更正为「仅监控读空闲」 |
+| B | 服务端应答写 `String` 会抛异常 | `ctx.writeAndFlush("heart")` 写出 `String`，pipeline 无 `StringEncoder` → `UnsupportedOperationException`；且该 handler 位于 `WebSocketServerProtocolHandler` **之前**，outbound 不经 WS 帧编码器 | 应答改为 `TextWebSocketFrame`（见下方 5.x），由 `HandlerWebSocket` 在协议处理器**之后**负责回包 |
+| C | 空闲阈值余量过小 | 阈值写死 6 秒，心跳间隔 5 秒，仅 1 秒余量，一次抖动/GC 即误判断连；`REDIS_KEY_EXPIRES_HEART_BEAT` 同为 6 秒，两次心跳之间存在「假离线」窗口，会误触单点登录闸门 | 阈值抽为常量并改为「心跳间隔的 4 倍」= 20 秒，可容忍连续 3 次心跳延迟或丢失；Redis 键 TTL 与之对齐 |
+| D | 直接 `ctx.close()` 客户端收 1006 | 未发 `CloseWebSocketFrame`，客户端只能拿到异常关闭码 1006，无法区分「正常下线」与「网络中断」 | 先 `writeAndFlush(new CloseWebSocketFrame(NORMAL_CLOSURE, "heart beat timeout"))` 再 `addListener(CLOSE)`，客户端可拿到 1000 |
+| E | 客户端看门狗完全失效 | `setInterval` 回调里调用 `resetHeartbeatTimeout()`，等于「自己给自己续命」，无论对端是否存活都每 5 秒重置一次；且 `onopen` 从未启动过看门狗 | 看门狗**只由「收到下行帧」重置**；`onopen` 发送首个心跳后立即启动一次；超时改为 `HEARTBEAT_INTERVAL * 3` |
+
+**实施文件**
+
+| 文件 | 改动 |
+| --- | --- |
+| `entity/constants/Constants.java` | 新增 `WS_HEART_BEAT_INTERVAL_SECONDS=5`、`WS_IDLE_TIMEOUT_SECONDS=4×间隔(=20)`、`WS_HEART_BEAT_CONTENT="heart beat"`、`WS_HEART_BEAT_REPLY="heart"`；`REDIS_KEY_EXPIRES_HEART_BEAT` 由写死 6 改为 `WS_IDLE_TIMEOUT_SECONDS` |
+| `websocket/netty/HandlerHeartBeat.java` | **重命名**（原 `HanlderHeartBeat`，拼写错误）：只处理 `READER_IDLE`，`logger.warn`，发 `CloseWebSocketFrame(1000)` 后关闭；非空闲事件 `fireUserEventTriggered` 继续传播 |
+| `websocket/netty/NettyWebSocketStarter.java` | `IdleStateHandler` 阈值改用 `Constants.WS_IDLE_TIMEOUT_SECONDS`；注册 `HandlerHeartBeat`；注释更正（原「读写」→ 仅读空闲） |
+| `websocket/netty/HandlerWebSocket.java` | 收到 `Constants.WS_HEART_BEAT_CONTENT` 时 `channel().writeAndFlush(new TextWebSocketFrame(WS_HEART_BEAT_REPLY))` 并返回；新增 `Constants` import |
+| `easy-chat`：`src/main/wsClient.js` | 提取 `HEARTBEAT_INTERVAL`/`HEARTBEAT_TIMEOUT` 常量；`onopen` 启动看门狗；`setInterval` 去掉自我重置；`onmessage` 的 `JSON.parse` 加 `try/catch`（服务端会下发纯文本 `heart`）；`sentMessageStatusList` 取值加 `(message.extendData \|\| {})` 兜底，避免无 `extendData` 的消息触发 TypeError |
+
+**为什么服务端要回包（B/E 的连带设计）**
+
+- 客户端若只发不收，链路「半开」（本进程存活但对端已死、或中间设备静默丢弃下行）时永远看不到异常，看门狗无从触发。
+- 服务端回一个纯文本 `heart`：客户端每收到一帧就重置看门狗，`HEARTBEAT_TIMEOUT = 15s` 恰好容忍连续 2 次应答丢失，既不敏感也不迟钝。
+- 回包必须用 `channel().writeAndFlush`（从通道尾部写出）。`HandlerHeartBeat` 位于 `WebSocketServerProtocolHandler` **之前**，从该位置 `ctx.writeAndFlush` 不经过 WS 帧编码器；这也是原实现写 `String` 直接抛异常的原因。回包职责因此放在协议处理器之后的 `HandlerWebSocket`。
+
+**遗留 / 未执行**
+
+- 端到端未测（本机无 Redis，应用无法启动）：需在真实环境验证「拉闸断网 → 客户端 15s 内 `terminate()` 并重连」与「服务端 20s 无心跳 → 下发 1000 关闭帧」。
+- 客户端与服务端心跳常量分居两地（`Constants.java` 与 `wsClient.js`），靠注释对齐，无编译期约束；改变间隔时需同时修改，已记为已知维护成本。
+- **验证**：`mvn -q compile -DskipTests` → 成功；`grep HanlderHeartBeat|looger` 无残留。

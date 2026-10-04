@@ -1,5 +1,6 @@
 package com.easychat.websocket.netty;
 
+import com.easychat.entity.constants.Constants;
 import com.easychat.entity.dto.TokenUserInfoDto;
 import com.easychat.entity.dto.WsUpstreamDto;
 import com.easychat.enums.MessageTypeEnum;
@@ -58,9 +59,17 @@ public class HandlerWebSocket extends SimpleChannelInboundHandler<TextWebSocketF
         if (StringTools.isEmpty(text)) {
             return;
         }
-        // 心跳是纯文本「heart beat」，不是 JSON 对象；此处按首字符短路，避免每 5 秒一次的心跳
-        // 被送去 JSON 解析、失败后刷两条 ERROR 日志（JsonUtils 一条 + 本类 catch 一条带堆栈）。
-        // 真正的脏数据（形似 JSON 但解析失败）仍由下方 try/catch 接住。
+        // 心跳是纯文本「heart beat」，不是 JSON 对象。
+        // 服务端回一个纯文本应答（Constants.WS_HEART_BEAT_REPLY），让客户端能凭「是否收到下行帧」判断链路存活：
+        // 客户端的看门狗只在下行帧到达时才重置，若只发不收，链路半开（本进程活着但对端已死）时客户端永远察觉不到。
+        // 用 channel().writeAndFlush 从通道尾部写出，确保经过 WebSocket 帧编码器；
+        // 若用 ctx.writeAndFlush 则从当前 handler 位置起传播，一旦后续 pipeline 有变动容易漏掉编码器。
+        if (Constants.WS_HEART_BEAT_CONTENT.equals(text)) {
+            ctx.channel().writeAndFlush(new TextWebSocketFrame(Constants.WS_HEART_BEAT_REPLY));
+            return;
+        }
+        // 其它非 JSON 脏文本按首字符短路，避免每 5 秒一次的心跳被送去 JSON 解析、失败后刷两条 ERROR 日志
+        // （JsonUtils 一条 + 本类 catch 一条带堆栈）。真正的脏数据（形似 JSON 但解析失败）仍由下方 try/catch 接住。
         if (!text.startsWith("{")) {
             return;
         }

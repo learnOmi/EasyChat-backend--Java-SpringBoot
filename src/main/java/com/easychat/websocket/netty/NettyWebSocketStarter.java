@@ -1,6 +1,7 @@
 package com.easychat.websocket.netty;
 
 import com.easychat.entity.config.AppConfig;
+import com.easychat.entity.constants.Constants;
 import com.easychat.utils.StringTools;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
@@ -72,8 +73,12 @@ public class NettyWebSocketStarter implements Runnable {
                              */
                             pipeline.addLast(new HttpServerCodec()); // 添加HTTP编解码器，用于处理HTTP请求和响应
                             pipeline.addLast(new HttpObjectAggregator(64 * 1024)); // 添加HTTP对象聚合器，将多个HTTP消息聚合为完整的FullHttpRequest或FullHttpResponse，设置最大聚合大小为64KB
-                            pipeline.addLast(new IdleStateHandler(6, 0, 0, TimeUnit.SECONDS)); // 添加空闲状态处理器，当连接在6秒内没有读写操作时，会触发IdleStateEvent事件
-                            pipeline.addLast(new HanlderHeartBeat()); // 添加心跳处理器，用于处理WebSocket连接的心跳检测，保持连接活跃
+                            // 空闲状态处理器：仅监控「读空闲」（readerIdleTime），即多久没收到客户端数据即触发 IdleStateEvent。
+                            // 阈值取心跳间隔的 4 倍（见 Constants.WS_IDLE_TIMEOUT_SECONDS），可容忍连续 3 次心跳延迟或丢失；
+                            // 原实现写死 6 秒、只比 5 秒心跳多 1 秒余量，一次网络抖动就会误判断连。
+                            // 后两个参数（writerIdleTime、allIdleTime）为 0 表示不启用——服务端不主动发心跳，无需监控写空闲。
+                            pipeline.addLast(new IdleStateHandler(Constants.WS_IDLE_TIMEOUT_SECONDS, 0, 0, TimeUnit.SECONDS));
+                            pipeline.addLast(new HandlerHeartBeat()); // 读空闲超时后优雅关闭连接（发送 CloseWebSocketFrame）
                             // 添加WebSocket协议处理器，配置WebSocket连接参数 参数说明：
                             // "/ws" - WebSocket的URI路径
                             // null - 允许的子协议，null表示不限制
