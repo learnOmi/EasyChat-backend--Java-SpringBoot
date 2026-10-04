@@ -2,6 +2,7 @@ package com.easychat.websocket;
 
 import com.easychat.entity.constants.Constants;
 import com.easychat.entity.dto.MessageSendDto;
+import com.easychat.entity.dto.SentMessageStatusDto;
 import com.easychat.entity.dto.WsInitData;
 import com.easychat.entity.po.ChatMessage;
 import com.easychat.entity.po.ChatSessionUser;
@@ -11,6 +12,7 @@ import com.easychat.entity.query.ChatMessageQuery;
 import com.easychat.entity.query.ChatSessionUserQuery;
 import com.easychat.entity.query.UserContactApplyQuery;
 import com.easychat.entity.query.UserInfoQuery;
+import com.easychat.enums.MessageStatusEnum;
 import com.easychat.enums.MessageTypeEnum;
 import com.easychat.enums.UserContactApplyStatusEnum;
 import com.easychat.enums.UserContactTypeEnum;
@@ -116,14 +118,40 @@ public class ChannelContextUtils {
         WsInitData wsInitData = new WsInitData();
         wsInitData.setChatSessionList(chatSessionUserList);
 
-        // 查询聊天信息
+        // 查询聊天信息（第一段：别人发给我的消息，含我所在群的消息）
         List<String> groupIdList = contactIdList.stream().filter(item -> item.startsWith(UserContactTypeEnum.GROUP.getPrefix())).collect(Collectors.toList());
         groupIdList.add(userId);
         ChatMessageQuery messageQuery = new ChatMessageQuery();
         messageQuery.setContactIdList(groupIdList);
         messageQuery.setLastReceiveTime(lastOffTime);
         List<ChatMessage> chatMessageList = chatMessageMapper.selectList(messageQuery);
+
         wsInitData.setChatMessageList(chatMessageList);
+
+        // 查询聊天信息（第二段：我发出的、且已被接收方确认送达的消息）。
+        // 第一段只覆盖 contact_id ∈ {群, 我}，即「收件人是我」的消息，不包含「我发出的」；
+        // 若不补第二段，发送方离线期间消息被接收方 ACK 后，重连也拉不到自己发出消息的最新状态，会永远停在「已发送」。
+        // 注意：这里不能用 lastOffTime 作为时间条件——lastOffTime 是「WS 断开时刻」，而待回补的消息发送于断开之前，
+        // send_time < lastOffTime 会被扩展条件 send_time &gt; lastReceiveTime 过滤掉，从而永远查不到；
+        // 因此改用「最近三天」作为回溯下界（该条件作用于 send_time），并按 status=已送达 精确筛选。
+        ChatMessageQuery sentMessageQuery = new ChatMessageQuery();
+        sentMessageQuery.setSendUserId(userId);
+        sentMessageQuery.setStatus(MessageStatusEnum.DELIVERED.getStatus().byteValue());
+        sentMessageQuery.setLastReceiveTime(System.currentTimeMillis() - Constants.MILLLSSECONDS_3DAY);
+        List<ChatMessage> sentMessageList = chatMessageMapper.selectList(sentMessageQuery);
+
+        // 只回传 messageId/sessionId/status 三个字段，不把「我发出的消息」混进 chatMessageList：
+        // 前端 saveMessageBatch 会先按 contactId 累加未读数，混入我发出的消息会导致未读数虚增。
+        List<SentMessageStatusDto> sentMessageStatusList = new ArrayList<>(sentMessageList.size());
+        for (ChatMessage chatMessage : sentMessageList) {
+            SentMessageStatusDto sentMessageStatusDto = new SentMessageStatusDto();
+            sentMessageStatusDto.setMessageId(chatMessage.getMessageId());
+            sentMessageStatusDto.setSessionId(chatMessage.getSessionId());
+            // 查询已按 status=已送达 过滤，此处 status 必然非空
+            sentMessageStatusDto.setStatus(chatMessage.getStatus().intValue());
+            sentMessageStatusList.add(sentMessageStatusDto);
+        }
+        wsInitData.setSentMessageStatusList(sentMessageStatusList);
 
         // 查询好友申请
         UserContactApplyQuery applyQuery = new UserContactApplyQuery();

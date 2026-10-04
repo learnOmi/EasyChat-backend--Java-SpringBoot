@@ -1,8 +1,12 @@
 package com.easychat.enums;
 
+/**
+ * 消息状态枚举 0:发送中 1:已发送 2:已送达
+ */
 public enum MessageStatusEnum {
     SENDING(0, "发送中"),
-    SENDED(1, "已发送");
+    SENDED(1, "已发送"),
+    DELIVERED(2, "已送达");
 
     private Integer status;
     private String desc;

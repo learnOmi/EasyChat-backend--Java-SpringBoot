@@ -330,8 +330,54 @@ public class ChatMessageServiceImpl implements ChatMessageService {
         messageSendDto.setClientMessageId(chatMessage.getClientMessageId());
         messageSendDto.setStatus(MessageStatusEnum.SENDED.getStatus());
         messageSendDto.setFileName(fileName);
-        messageSendDto.setFileType(MessageTypeEnum.FILE_UPLOAD.getType());
+        // fileType 的取值域是 0=图片/1=视频/2=其它文件，须取消息自身落库的文件类型，
+        // 不能误用 MessageTypeEnum（那是消息类型的取值域，FILE_UPLOAD=6）
+        messageSendDto.setFileType(chatMessage.getFileType() == null ? null : chatMessage.getFileType().intValue());
         messageSendDto.setContactId(chatMessage.getContactId());
+        messageSendDto.setMessageType(MessageTypeEnum.FILE_UPLOAD.getType());
+        messageHandler.sendMessage(messageSendDto);
+    }
+
+    @Override
+    public void ackMessage(String userId, Long messageId) {
+        // 参数校验：缺一不可
+        if (StringTools.isEmpty(userId) || messageId == null) {
+            logger.info("ACK参数不合法，忽略: userId={}, messageId={}", userId, messageId);
+            return;
+        }
+        // 消息必须存在
+        ChatMessage message = chatMessageMapper.selectByMessageId(messageId);
+        if (message == null) {
+            logger.info("ACK对应的消息不存在，忽略: userId={}, messageId={}", userId, messageId);
+            return;
+        }
+        // 防伪造校验：仅允许「单聊」中「接收方本人」对发给自己的消息回 ACK；群聊本次直接忽略
+        if (message.getContactType() == null
+                || message.getContactType() != UserContactTypeEnum.USER.getType().byteValue()
+                || !userId.equals(message.getContactId())) {
+            logger.info("ACK校验不通过，忽略: userId={}, messageId={}, contactType={}, contactId={}",
+                    userId, messageId, message.getContactType(), message.getContactId());
+            return;
+        }
+        // 幂等闸门：仅当状态仍为「已发送」时才推进为「已送达」，影响行数=0 表示已 ACK 过（重复/延迟 ACK）
+        ChatMessage updateBean = new ChatMessage();
+        updateBean.setStatus(MessageStatusEnum.DELIVERED.getStatus().byteValue());
+        Integer affectedRows = chatMessageMapper.updateStatusByMessageIdAndStatus(
+                updateBean, messageId, MessageStatusEnum.SENDED.getStatus().byteValue());
+        if (affectedRows == null || affectedRows == 0) {
+            logger.info("消息已为送达状态（重复或延迟ACK），跳过推送: messageId={}", messageId);
+            return;
+        }
+        // 向发送方推送状态变更通知。注意路由与展示字段的区别：
+        // contactId 决定推送目标（发送方），sendUserId 为回 ACK 的接收方；
+        // sendMsg 内部会把 contactId 覆盖为 sendUserId 再下发，因此前端拿到的 contactId 即接收方（展示用）。
+        MessageSendDto messageSendDto = new MessageSendDto();
+        messageSendDto.setMessageType(MessageTypeEnum.MESSAGE_STATUS_CHANGE.getType());
+        messageSendDto.setMessageId(messageId);
+        messageSendDto.setSessionId(message.getSessionId());
+        messageSendDto.setStatus(MessageStatusEnum.DELIVERED.getStatus());
+        messageSendDto.setSendUserId(userId);
+        messageSendDto.setContactId(message.getSendUserId());
         messageHandler.sendMessage(messageSendDto);
     }
 

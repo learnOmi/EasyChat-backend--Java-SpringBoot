@@ -12,6 +12,8 @@ public class WsInitData {
     private List<ChatSessionUser> chatSessionList;
     @Schema(description = "聊天消息列表")
     private List<ChatMessage> chatMessageList;
+    @Schema(description = "我发出的消息状态快照列表（用于重连后回补送达状态）")
+    private List<SentMessageStatusDto> sentMessageStatusList;
     @Schema(description = "申请数量")
     private Integer applyCount;
 
@@ -21,6 +23,14 @@ public class WsInitData {
 
     public void setChatMessageList(List<ChatMessage> chatMessageList) {
         this.chatMessageList = chatMessageList;
+    }
+
+    public List<SentMessageStatusDto> getSentMessageStatusList() {
+        return sentMessageStatusList;
+    }
+
+    public void setSentMessageStatusList(List<SentMessageStatusDto> sentMessageStatusList) {
+        this.sentMessageStatusList = sentMessageStatusList;
     }
 
     public Integer getApplyCount() {

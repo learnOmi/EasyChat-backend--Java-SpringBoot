@@ -1,7 +1,11 @@
 package com.easychat.websocket.netty;
 
 import com.easychat.entity.dto.TokenUserInfoDto;
+import com.easychat.entity.dto.WsUpstreamDto;
+import com.easychat.enums.MessageTypeEnum;
 import com.easychat.redis.RedisComponent;
+import com.easychat.service.ChatMessageService;
+import com.easychat.utils.JsonUtils;
 import com.easychat.utils.StringTools;
 import com.easychat.websocket.ChannelContextUtils;
 import io.netty.channel.Channel;
@@ -30,6 +34,8 @@ public class HandlerWebSocket extends SimpleChannelInboundHandler<TextWebSocketF
     private RedisComponent redisComponent;
     @Resource
     private ChannelContextUtils channelContextUtils;
+    @Resource
+    private ChatMessageService chatMessageService;
 
     /**
      * 处理接收到的WebSocket消息
@@ -44,6 +50,28 @@ public class HandlerWebSocket extends SimpleChannelInboundHandler<TextWebSocketF
         String userId = attribute.get();
         //logger.info("收到userId{}消息: {}",userId, msg.text());
         redisComponent.saveHeartBeat(userId);
+
+        // 解析上行内容并路由（当前仅支持消息送达 ACK）；
+        // 整段包在 try/catch 中，异常只记日志，绝不能因上行解析失败把 WS 连接搞挂。
+        // 注意：JsonUtils.convertJson2Obj 内部会把解析异常包装成 BusinessException 抛出，此处一并接住。
+        String text = msg.text();
+        if (StringTools.isEmpty(text)) {
+            return;
+        }
+        // 心跳是纯文本「heart beat」，不是 JSON 对象；此处按首字符短路，避免每 5 秒一次的心跳
+        // 被送去 JSON 解析、失败后刷两条 ERROR 日志（JsonUtils 一条 + 本类 catch 一条带堆栈）。
+        // 真正的脏数据（形似 JSON 但解析失败）仍由下方 try/catch 接住。
+        if (!text.startsWith("{")) {
+            return;
+        }
+        try {
+            WsUpstreamDto upstreamDto = JsonUtils.convertJson2Obj(text, WsUpstreamDto.class);
+            if (upstreamDto != null && MessageTypeEnum.MESSAGE_ACK.getType().equals(upstreamDto.getMessageType())) {
+                chatMessageService.ackMessage(userId, upstreamDto.getMessageId());
+            }
+        } catch (Exception e) {
+            logger.error("解析处理WS上行消息失败,userId:{},msg:{}", userId, text, e);
+        }
     }
 
     /**

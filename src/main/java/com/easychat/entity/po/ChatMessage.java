@@ -1,6 +1,5 @@
 package com.easychat.entity.po;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.io.Serializable;
@@ -47,9 +46,8 @@ public class ChatMessage implements Serializable {
 	// 文件类型
 	@Schema(description = "文件类型")
 	private Byte fileType;
-	// 状态0:正在发送1:已发送
-	@JsonIgnore
-	@Schema(description = "状态0:正在发送1:已发送")
+	// 状态0:发送中1:已发送2:已送达
+	@Schema(description = "状态0:发送中1:已发送2:已送达")
 	private Byte status;
 	// 客户端幂等ID，用于消息去重
 	@Schema(description = "客户端幂等ID，用于消息去重")
