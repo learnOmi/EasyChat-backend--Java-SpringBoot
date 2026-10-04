@@ -55,7 +55,8 @@ public class ChatController extends ABaseController {
                                   @Parameter(description = "消息类型") @NotNull Integer messageType,
                                   @Parameter(description = "文件大小（文件/媒体消息）") Long fileSize,
                                   @Parameter(description = "文件名（文件/媒体消息）") String fileName,
-                                  @Parameter(description = "文件类型（文件/媒体消息）") Integer fileType) {
+                                  @Parameter(description = "文件类型（文件/媒体消息）") Integer fileType,
+                                  @Parameter(description = "客户端幂等ID（UUID，用于消息去重；可不传，兼容老客户端）") @Size(max = 64) String clientMessageId) {
         TokenUserInfoDto tokenUserInfoDto = getTokenUserInfoDto(request);
         ChatMessage chatMessage = new ChatMessage();
         chatMessage.setContactId(contactId);
@@ -64,6 +65,8 @@ public class ChatController extends ABaseController {
         chatMessage.setFileSize(fileSize);
         chatMessage.setFileName(fileName);
         chatMessage.setFileType(fileType != null ? fileType.byteValue() : null);
+        // 空串归一化为 null：MySQL 唯一索引允许多个 NULL，但把空串视为有效值会导致多条空串互相冲突
+        chatMessage.setClientMessageId(StringTools.isEmpty(clientMessageId) ? null : clientMessageId);
         MessageSendDto messageSendDto = chatMessageService.saveMessage(chatMessage, tokenUserInfoDto);
 
         return getSuccessResponse(messageSendDto);

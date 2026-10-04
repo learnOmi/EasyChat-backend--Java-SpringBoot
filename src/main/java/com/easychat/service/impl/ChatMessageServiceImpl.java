@@ -29,7 +29,12 @@ import jakarta.annotation.Resource;
 import jakarta.validation.constraints.NotEmpty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
@@ -58,6 +63,13 @@ public class ChatMessageServiceImpl implements ChatMessageService {
     private AppConfig appConfig;
     @Resource
     private UserContactMapper<UserContact, UserContactQuery> userContactMapper;
+    /**
+     * 自注入代理，用于让 saveMessageInNewTx 的 REQUIRES_NEW 事务注解生效。
+     * <p>自调用（this.xxx）会绕过 Spring 代理导致事务静默失效，因此必须通过 self 调用。</p>
+     */
+    @Autowired
+    @Lazy
+    private ChatMessageServiceImpl self;
 
 	// 根据条件查询列表
 	public List<ChatMessage> findListByParam(ChatMessageQuery query) {
@@ -127,6 +139,16 @@ public class ChatMessageServiceImpl implements ChatMessageService {
 
     @Override
     public MessageSendDto saveMessage(ChatMessage chatMessage, TokenUserInfoDto tokenUserInfoDto) {
+        // 幂等预检：clientMessageId 非空时先按唯一索引查询，命中则直接返回既有消息（不落库、不推送、不更新会话）
+        String clientMessageId = chatMessage.getClientMessageId();
+        if (!StringTools.isEmpty(clientMessageId)) {
+            ChatMessage existedMessage = chatMessageMapper.selectByClientMessageId(clientMessageId);
+            if (existedMessage != null) {
+                logger.info("消息幂等命中，返回既有消息: clientMessageId={}, messageId={}", clientMessageId, existedMessage.getMessageId());
+                return CopyTools.copy(existedMessage, MessageSendDto.class);
+            }
+        }
+
         if (!Constants.ROBOT_UID.equals(tokenUserInfoDto.getUserId())) {
             List<String> contactList = redisComponent.getUserContactList(tokenUserInfoDto.getUserId());
             if (!contactList.contains(chatMessage.getContactId())) {
@@ -168,20 +190,34 @@ public class ChatMessageServiceImpl implements ChatMessageService {
         String messageContent = StringTools.cleanHtmlTag(chatMessage.getMessageContent());
         chatMessage.setMessageContent(messageContent);
 
-        ChatSession chatSession = new ChatSession();
-        chatSession.setLastMessage(messageContent);
-        if (UserContactTypeEnum.GROUP == contactTypeEnum) {
-            chatSession.setLastMessage(tokenUserInfoDto.getNickName() + ": " + messageContent);
-        }
-        chatSession.setLastReceiveTime(curTime);
-        chatSessionMapper.updateBySessionId(chatSession, sessionId);
-
         chatMessage.setSendUserId(sendUserId);
         chatMessage.setSendUserNickName(tokenUserInfoDto.getNickName());
         chatMessage.setContactType(contactTypeEnum.getType().byteValue());
-        chatMessageMapper.insert(chatMessage);
+
+
+        // 落库：insert + 更新会话摘要，放在独立事务中，保证幂等回查在独立事务中执行，避免外层事务被标记回滚导致回查读不到已提交记录；
+        // 群聊摘要需带发送人昵称前缀（保持原有逻辑）
+        String lastMessage = UserContactTypeEnum.GROUP == contactTypeEnum
+                ? tokenUserInfoDto.getNickName() + ": " + messageContent : messageContent;
+        try {
+            // 必须通过 self 代理调用，否则 REQUIRES_NEW 事务静默失效
+            self.saveMessageInNewTx(chatMessage, sessionId, lastMessage);
+        } catch (DuplicateKeyException e) {
+            // 并发下唯一索引 uk_client_msg_id 兜底：在新事务中回查已提交的既有记录并返回（不推送）
+            if (!StringTools.isEmpty(clientMessageId)) {
+                ChatMessage existedMessage = chatMessageMapper.selectByClientMessageId(clientMessageId);
+                if (existedMessage != null) {
+                    logger.info("消息并发幂等命中，返回既有消息: clientMessageId={}, messageId={}", clientMessageId, existedMessage.getMessageId());
+                    return CopyTools.copy(existedMessage, MessageSendDto.class);
+                }
+            }
+            // 回查仍为空说明并非本幂等键冲突，原样抛出，避免吞异常
+            throw e;
+        }
+
         MessageSendDto messageSendDto = CopyTools.copy(chatMessage, MessageSendDto.class);
 
+        // 推送放在事务提交之后
         if (Constants.ROBOT_UID.equals(contactId)) {
             SysSettingDto sysSettingDto = redisComponent.getSysSetting();
             TokenUserInfoDto robot = new TokenUserInfoDto();
@@ -197,6 +233,23 @@ public class ChatMessageServiceImpl implements ChatMessageService {
         }
 
         return messageSendDto;
+    }
+
+    /**
+     * 在独立事务中落库消息并更新会话摘要。
+     * <p>注意：必须由 {@link #self} 代理调用（不能用 this.xxx，否则事务静默失效），
+     * 且方法必须保持 public，以适配 Spring 的 CGLIB 子类代理。</p>
+     * @param chatMessage 已填充完毕、待落库的消息
+     * @param sessionId 会话ID
+     * @param lastMessage 会话摘要（群聊含发送人昵称前缀）
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void saveMessageInNewTx(ChatMessage chatMessage, String sessionId, String lastMessage) {
+        chatMessageMapper.insert(chatMessage);
+        ChatSession chatSession = new ChatSession();
+        chatSession.setLastMessage(lastMessage);
+        chatSession.setLastReceiveTime(chatMessage.getSendTime());
+        chatSessionMapper.updateBySessionId(chatSession, sessionId);
     }
 
     @Override
@@ -217,6 +270,11 @@ public class ChatMessageServiceImpl implements ChatMessageService {
         // 验证用户是否是消息发送者
         if (!chatMessage.getSendUserId().equals(userId)) {
             throw new BusinessException(ResponseCodeEnum.CODE_600);
+        }
+        // 幂等短路：状态已是「已发送」说明文件早已上传完成，重复上传直接返回，省去磁盘覆盖写
+        if (chatMessage.getStatus() != null && MessageStatusEnum.SENDED.getStatus().byteValue() == chatMessage.getStatus()) {
+            logger.info("消息文件已上传完成，跳过重复上传: messageId={}", messageId);
+            return;
         }
         // 获取系统设置
         SysSettingDto sysSettingDto = redisComponent.getSysSetting();
@@ -255,16 +313,21 @@ public class ChatMessageServiceImpl implements ChatMessageService {
             throw new BusinessException("文件上传失败"); // 抛出业务异常
         }
 
-        // 更新消息状态为已发送
+        // 条件更新闸门：仅当状态仍为「发送中」时才推进为「已发送」，按影响行数判重
         ChatMessage uploadInfo = new ChatMessage();
         uploadInfo.setStatus(MessageStatusEnum.SENDED.getStatus().byteValue());
-        ChatMessageQuery messageQuery = new ChatMessageQuery();
-        messageQuery.setMessageId(messageId);
-        messageQuery.setStatus(MessageStatusEnum.SENDING.getStatus().byteValue());
-        chatMessageMapper.updateByMessageId(uploadInfo, messageId);
+        Integer affectedRows = chatMessageMapper.updateStatusByMessageIdAndStatus(uploadInfo, messageId, MessageStatusEnum.SENDING.getStatus().byteValue());
+        if (affectedRows == null || affectedRows == 0) {
+            // 已被并发重试抢先推进，说明文件已完成，跳过重复推送
+            logger.info("消息文件重复上传，状态已推进，跳过推送: messageId={}", messageId);
+            return;
+        }
 
-        // 构建消息发送DTO并发送消息
+        // 构建消息发送DTO并发送消息（补全 messageId/sessionId/clientMessageId，便于前端按 messageId 覆盖本地乐观消息）
         MessageSendDto messageSendDto = new MessageSendDto();
+        messageSendDto.setMessageId(messageId);
+        messageSendDto.setSessionId(chatMessage.getSessionId());
+        messageSendDto.setClientMessageId(chatMessage.getClientMessageId());
         messageSendDto.setStatus(MessageStatusEnum.SENDED.getStatus());
         messageSendDto.setFileName(fileName);
         messageSendDto.setFileType(MessageTypeEnum.FILE_UPLOAD.getType());

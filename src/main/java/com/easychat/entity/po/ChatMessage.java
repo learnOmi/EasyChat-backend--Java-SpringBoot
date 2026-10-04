@@ -51,6 +51,9 @@ public class ChatMessage implements Serializable {
 	@JsonIgnore
 	@Schema(description = "状态0:正在发送1:已发送")
 	private Byte status;
+	// 客户端幂等ID，用于消息去重
+	@Schema(description = "客户端幂等ID，用于消息去重")
+	private String clientMessageId;
 
 	public void setMessageId(Long messageId) {
 		this.messageId = messageId;
@@ -156,6 +159,14 @@ public class ChatMessage implements Serializable {
 		return status;
 	}
 
+	public void setClientMessageId(String clientMessageId) {
+		this.clientMessageId = clientMessageId;
+	}
+
+	public String getClientMessageId() {
+		return clientMessageId;
+	}
+
 	@Override
 	public String toString() {
 		return "ChatMessage [" +
@@ -171,7 +182,8 @@ public class ChatMessage implements Serializable {
 			"fileSize=" + (fileSize == null ? "空" : fileSize) + ", " +
 			"fileName=" + (fileName == null ? "空" : fileName) + ", " +
 			"fileType=" + (fileType == null ? "空" : fileType) + ", " +
-			"status=" + (status == null ? "空" : status) + 
+			"status=" + (status == null ? "空" : status) + ", " +
+			"clientMessageId=" + (clientMessageId == null ? "空" : clientMessageId) +
 			"]";
 	}
 }

@@ -22,4 +22,21 @@ public interface ChatMessageMapper<T, P> extends BaseMapper {
 
 	// 根据MessageId删除
 	Integer deleteByMessageId(@Param("messageId") Long messageId);
+
+	/**
+	 * 根据客户端幂等ID查询消息（依赖唯一索引 uk_client_msg_id）
+	 * @param clientMessageId 客户端幂等ID
+	 * @return 命中的消息，未命中返回 null
+	 */
+	T selectByClientMessageId(@Param("clientMessageId") String clientMessageId);
+
+	/**
+	 * 条件更新消息：仅当当前 status 等于 fromStatus 时才更新，返回影响行数
+	 * 用于上传闸门判重：影响行数=1 表示本次推进成功，=0 表示已被并发请求抢先推进
+	 * @param t 待更新的字段（如 status）
+	 * @param messageId 消息ID
+	 * @param fromStatus 期望的当前状态
+	 * @return 影响行数
+	 */
+	Integer updateStatusByMessageIdAndStatus(@Param("bean") T t, @Param("messageId") Long messageId, @Param("fromStatus") Byte fromStatus);
 }

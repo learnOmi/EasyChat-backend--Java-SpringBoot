@@ -29,11 +29,13 @@
 		<result column="file_type" property="fileType"/>
 		<!-- 状态0:正在发送1:已发送 -->
 		<result column="status" property="status"/>
+		<!-- 客户端幂等ID，用于消息去重 -->
+		<result column="client_message_id" property="clientMessageId"/>
 	</resultMap>
 
 <!-- 通用查询结果列 -->
 	<sql id="base_column_list">
-		message_id,session_id,message_type,message_content,send_user_id,send_user_nick_name,send_time,contact_id,contact_type,file_size,file_name,file_type,status
+		message_id,session_id,message_type,message_content,send_user_id,send_user_nick_name,send_time,contact_id,contact_type,file_size,file_name,file_type,status,client_message_id
 	</sql>
 
 <!-- 基础查询条件 -->
@@ -184,6 +186,9 @@
 			<if test="bean.status != null">
 				status, 
 			</if>
+			<if test="bean.clientMessageId != null">
+				client_message_id, 
+			</if>
 		</trim>
 		<trim prefix="values(" suffix=")" suffixOverrides="," >
 			<if test="bean.messageId != null">
@@ -224,6 +229,9 @@
 			</if>
 			<if test="bean.status != null">
 				#{bean.status}, 
+			</if>
+			<if test="bean.clientMessageId != null">
+				#{bean.clientMessageId}, 
 			</if>
 		</trim>
 	</insert>
@@ -558,5 +566,33 @@
 			</if>
 		</set>
 		where message_id = #{messageId} 
+	</update>
+
+	<!-- 根据客户端幂等ID查询（依赖唯一索引 uk_client_msg_id） -->
+	<select id="selectByClientMessageId" resultMap="base_result_map">
+		select <include refid="base_column_list"/>
+		from chat_message
+		where client_message_id = #{clientMessageId} 
+	</select>
+
+	<!-- 条件更新：仅当当前 status 等于 fromStatus 时才更新，返回影响行数用于幂等判重 -->
+	<update id="updateStatusByMessageIdAndStatus">
+		update chat_message
+		<set>
+			<if test="bean.status != null">
+				status = #{bean.status}, 
+			</if>
+			<if test="bean.fileSize != null">
+				file_size = #{bean.fileSize}, 
+			</if>
+			<if test="bean.fileName != null">
+				file_name = #{bean.fileName}, 
+			</if>
+			<if test="bean.fileType != null">
+				file_type = #{bean.fileType}, 
+			</if>
+		</set>
+		where message_id = #{messageId} 
+			and status = #{fromStatus}
 	</update>
 </mapper>

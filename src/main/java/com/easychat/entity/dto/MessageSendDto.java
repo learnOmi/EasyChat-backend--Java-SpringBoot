@@ -59,6 +59,9 @@ public class MessageSendDto<T> implements Serializable {
     // 群员数
     @Schema(description = "群员数")
     private Integer memberCount;
+    // 客户端幂等ID，用于消息去重
+    @Schema(description = "客户端幂等ID，用于消息去重")
+    private String clientMessageId;
 
     public Long getMessageId() {
         return messageId;
@@ -197,5 +200,13 @@ public class MessageSendDto<T> implements Serializable {
 
     public void setMemberCount(Integer memberCount) {
         this.memberCount = memberCount;
+    }
+
+    public String getClientMessageId() {
+        return clientMessageId;
+    }
+
+    public void setClientMessageId(String clientMessageId) {
+        this.clientMessageId = clientMessageId;
     }
 }
